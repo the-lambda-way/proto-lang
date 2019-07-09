@@ -1,0 +1,30 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+C:/Dev/Projects/languages/proto/repo/main.cpp
+fstream
+-
+iostream
+-
+string
+-
+system.h
+C:/Dev/Projects/languages/proto/repo/system.h
+
+C:/Dev/Projects/languages/proto/repo/syntax.h
+string
+-
+vector
+-
+
+C:/Dev/Projects/languages/proto/repo/system.h
+string
+-
+syntax.h
+C:/Dev/Projects/languages/proto/repo/syntax.h
+

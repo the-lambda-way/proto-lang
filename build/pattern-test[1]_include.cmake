@@ -1,0 +1,5 @@
+if(EXISTS "C:/Dev/Projects/languages/proto/repo/build/pattern-test[1]_tests.cmake")
+  include("C:/Dev/Projects/languages/proto/repo/build/pattern-test[1]_tests.cmake")
+else()
+  add_test(pattern-test_NOT_BUILT pattern-test_NOT_BUILT)
+endif()

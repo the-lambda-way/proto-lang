@@ -1,0 +1,37 @@
+
+
+// ---------------------------------------------------------------------------------------------------------------------
+// Macros
+// ---------------------------------------------------------------------------------------------------------------------
+
+/*
+// Equality test example
+proto-language ++= {
+    equality-test = Macro {left:expression '=' right:expression}
+        left  = expand(left)
+        right = expand(right)
+        assert type-of(left) = type-of(right)
+
+        case left
+            = Int    : return #'Kernel.int-equal(left, right)'
+            = Float  : return #'Kernel.float-equal(left, right)'
+            = Double : return #'Kernel.double-equal(left, right)'
+
+
+// Maybe we wish to reorganize the macro code for efficiency or something, then :
+// within proto-language body
+// @#' is the paste operator (syntax splice)
+// with-pattern returns a syntax-object
+@#`{
+    #,(with-pattern [[(MACRO ...),  language-macros.body],
+                     [(MATCH ...),  MACRO.pattern],
+                     [(ACTION ...), MACRO.body]]
+
+           #'(while pos < source.end
+                  cond
+                      MATCH : ACTION; ...)')
+
+}
+}    // proto-language
+*/
+

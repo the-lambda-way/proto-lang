@@ -1,0 +1,14 @@
+# Target labels
+ googletest-populate
+# Source files and their labels
+C:/Dev/Projects/languages/proto/repo/build/_deps/googletest-subbuild/CMakeFiles/googletest-populate
+C:/Dev/Projects/languages/proto/repo/build/_deps/googletest-subbuild/CMakeFiles/googletest-populate.rule
+C:/Dev/Projects/languages/proto/repo/build/_deps/googletest-subbuild/CMakeFiles/googletest-populate-complete.rule
+C:/Dev/Projects/languages/proto/repo/build/_deps/googletest-subbuild/googletest-populate-prefix/src/googletest-populate-stamp/googletest-populate-install.rule
+C:/Dev/Projects/languages/proto/repo/build/_deps/googletest-subbuild/googletest-populate-prefix/src/googletest-populate-stamp/googletest-populate-mkdir.rule
+C:/Dev/Projects/languages/proto/repo/build/_deps/googletest-subbuild/googletest-populate-prefix/src/googletest-populate-stamp/googletest-populate-download.rule
+C:/Dev/Projects/languages/proto/repo/build/_deps/googletest-subbuild/googletest-populate-prefix/src/googletest-populate-stamp/googletest-populate-update.rule
+C:/Dev/Projects/languages/proto/repo/build/_deps/googletest-subbuild/googletest-populate-prefix/src/googletest-populate-stamp/googletest-populate-patch.rule
+C:/Dev/Projects/languages/proto/repo/build/_deps/googletest-subbuild/googletest-populate-prefix/src/googletest-populate-stamp/googletest-populate-configure.rule
+C:/Dev/Projects/languages/proto/repo/build/_deps/googletest-subbuild/googletest-populate-prefix/src/googletest-populate-stamp/googletest-populate-build.rule
+C:/Dev/Projects/languages/proto/repo/build/_deps/googletest-subbuild/googletest-populate-prefix/src/googletest-populate-stamp/googletest-populate-test.rule

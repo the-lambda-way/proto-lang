@@ -1,3 +1,0 @@
-pattern-test_NOT_BUILT 0 0
----
-pattern-test_NOT_BUILT

@@ -1,2 +1,0 @@
-C:\Dev\Programs\mingw-w64\mingw64\bin\ar.exe qc libgmock_main.a  CMakeFiles/gmock_main.dir/src/gmock_main.cc.obj
-C:\Dev\Programs\mingw-w64\mingw64\bin\ranlib.exe libgmock_main.a

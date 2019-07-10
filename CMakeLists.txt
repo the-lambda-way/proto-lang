@@ -20,8 +20,8 @@ if (BUILD_TESTS)
     enable_testing ()
 endif ()
 
-# Don't compile separately from your tests: https://groups.google.com/forum/#!msg/googletestframework/Zo7_HOv1MJ0/F4ZBGjh_ePcJ
-# https://cliutils.gitlab.io/modern-cmake/chapters/testing/googletest.html
+# Don't compile GoogleTest separately from your codebase:
+#     https://groups.google.com/forum/#!msg/googletestframework/Zo7_HOv1MJ0/F4ZBGjh_ePcJ
 include (FetchContent)
 
 FetchContent_Declare (

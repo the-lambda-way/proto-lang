@@ -156,7 +156,7 @@ Pattern from_until (Pattern from, Pattern until)    { return seq({from, ::until(
 
 
 // ---------------------------------------------------------------------------------------------------------------------
-// Useful instances
+// Lexical patterns
 // ---------------------------------------------------------------------------------------------------------------------
 
 Pattern digit    = any({"0", "1", "2", "3", "4", "5", "6", "7", "8", "9"});
@@ -175,6 +175,12 @@ Pattern string_double (Pattern escape = lit("/"))    { return from_to(lit('"'), 
 Pattern string_single (Pattern escape = lit("/"))    { return from_to(lit("'"), lit("'")); }
 Pattern string        (Pattern escape = lit("/"))    { return any({string_double(escape), string_single(escape)}); }
 Pattern line_comment  (Pattern start)                { return from_to(start, newline); }
+
+
+// ---------------------------------------------------------------------------------------------------------------------
+// Grammatical patterns
+// ---------------------------------------------------------------------------------------------------------------------
+
 
 
 #endif

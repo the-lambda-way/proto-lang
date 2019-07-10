@@ -1,5 +1,5 @@
-#include <fstream>     // read source file
-#include <iostream>    // read from input
+#include <fstream>     // get_file_contents
+#include <iostream>    // repl
 #include <string>
 #include "syntax.h"
 #include "system.h"
@@ -28,17 +28,8 @@ string get_file_contents (string path) {
 
 
 void run (SourceCode code) {
-    // Apply syntax transformations
-    
-    
-    // 
-
-
-    Tokenizer tokenizer (origin, source);
-    vector<Token> tokens;
-    tokenizer.scan_tokens(tokens);
-
-    for (Token t : tokens)    cout << t.lexeme << endl;
+    // Just print code for now
+    cout << CodeProcessor(code).expand().source << endl;
 }
 
 

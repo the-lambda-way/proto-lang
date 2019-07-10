@@ -78,21 +78,19 @@ private:
 // Code Transformations
 // ---------------------------------------------------------------------------------------------------------------------
 // A CodeProcessor manages syntax transformations over a body of code.
-// This should change to a System once that is implemented
 class CodeProcessor {
 public:
     SourceCode source;
     CodeProcessor(SourceCode source);
 
     void add(Macro macro);
+    SourceCode expand();
 
 private:
-    string code;
-    int    progress;
-    int    offside;
+    SourceCode code;
+    int        index;
+    int        indent;
 };
-
-
 
 
 } // namespace Syntax

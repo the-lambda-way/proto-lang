@@ -1,6 +1,5 @@
 #include "pattern.h"
-
-using namespace std;
+using namespace PatLib;
 
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -51,8 +50,9 @@ bool until::operator() (std::string source, int pos) {
 
 // any
 // -------------------------
-any::any (vector<std::string> lit_patterns) : patterns(lit_patterns.begin(), lit_patterns.end()) {}
-any::any (vector<Pattern>     patterns)     : patterns(patterns)                                 {}
+any::any (char a[], char b[])                    : any({lit(a), lit(b)})                              {}
+any::any (std::vector<std::string> lit_patterns) : patterns(lit_patterns.begin(), lit_patterns.end()) {}
+any::any (std::vector<Pattern>     patterns)     : patterns(patterns)                                 {}
 
 bool any::operator() (std::string source, int pos) {
     start = pos;
@@ -70,9 +70,10 @@ bool any::operator() (std::string source, int pos) {
 
 // seq
 // -------------------------
-seq::seq (std::vector<Pattern> patterns) : patterns(patterns) {}
+seq::seq (char a[], char b[])            : seq({lit(a), lit(b)}) {}
+seq::seq (std::vector<Pattern> patterns) : patterns(patterns)    {}
 
-seq::seq (vector<Pattern> patterns, Pattern separator) {
+seq::seq (std::vector<Pattern> patterns, Pattern separator) {
     // interleave separators
     this->patterns.reserve(2*patterns.size() - 1);
    
@@ -85,11 +86,11 @@ seq::seq (vector<Pattern> patterns, Pattern separator) {
 }
 
 seq::seq (std::vector<std::string> lit_patterns)
-    : seq(vector<Pattern> (lit_patterns.begin(), lit_patterns.end()))
+    : seq(std::vector<Pattern> (lit_patterns.begin(), lit_patterns.end()))
 {}
 
-seq::seq (vector<std::string> lit_patterns, Pattern separator)
-    : seq(vector<Pattern> (lit_patterns.begin(), lit_patterns.end()),
+seq::seq (std::vector<std::string> lit_patterns, Pattern separator)
+    : seq(std::vector<Pattern> (lit_patterns.begin(), lit_patterns.end()),
           separator)
 {}
 
@@ -117,13 +118,15 @@ rep::rep (Pattern pattern, int n) : rep(pattern, n, n)  {}
 
 rep::rep (Pattern pattern, int min, int max)
     : pattern(pattern), min(min), max(max) {
-    if (max == -1)    max = numeric_limits<int>::max();
+    if (max == -1)    max = std::numeric_limits<int>::max();
 }
 
 bool rep::operator() (std::string source, int pos) {
     // fast check
-    if (!pattern(source, pos))    return false;
-
+    if (min > 0) {
+        if (!pattern(source, pos))    return false;
+    }
+    
     start      = pos;
     matches[0] = pattern;
     pos        = pattern.end;

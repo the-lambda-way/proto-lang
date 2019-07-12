@@ -1,59 +1,24 @@
+#include "definitions.h"
+
+
+namespace Proto {
+
+using namespace PatLib;
+namespace PD = PatDef;
 
 // ---------------------------------------------------------------------------------------------------------------------
 // Recognizers
 // ---------------------------------------------------------------------------------------------------------------------
-{
-using namespace Recognizer;
 
-// Single character
-Recognizer match_equal (literal('='));
-Recognizer match_digit (any({'0', '1', '2', '3', '4', '5', '6', '7', '8', '9'}));
-
-
-int match_equal        (string source, int pos)    return match_literal(source, pos, '=');
-int match_colon        (string source, int pos)    return match_literal(source, pos, ':');
-int match_lparen       (string source, int pos)    return match_literal(source, pos, '(');
-int match_rparen       (string source, int pos)    return match_literal(source, pos, ')');
-int match_dot          (string source, int pos)    return match_literal(source, pos, '.');
-int match_lcurly       (string source, int pos)    return match_literal(source, pos, '{');
-int match_rcurly       (string source, int pos)    return match_literal(source, pos, '}');
-int match_comma        (string source, int pos)    return match_literal(source, pos, ',');
-int match_lbrace       (string source, int pos)    return match_literal(source, pos, '[');
-int match_rbrace       (string source, int pos)    return match_literal(source, pos, ']');
-int match_semicolon    (string source, int pos)    return match_literal(source, pos, ';');
-int match_underscore   (string source, int pos)    return match_literal(source, pos, '_');
-int match_whitespace   (string source, int pos)    return match_literal(source, pos, ' ') 
-                                                       || match_literal(source, pos, '\r');
-int match_tab          (string source, int pos)    return match_literal(source, pos, '\t');
-int match_less_than    (string source, int pos)    return match_literal(source, pos, '<');
-int match_greater_than (string source, int pos)    return match_literal(source, pos, '>');
-int match_quote        (string source, int pos)    return match_literal(source, pos, '\'');
-int match_star         (string source, int pos)    return match_literal(source, pos, '*');
-int match_quasi        (string source, int pos)    return match_literal(source, pos, '`');
-int match_plus         (string source, int pos)    return match_literal(source, pos, '+');
-int match_slash        (string source, int pos)    return match_literal(source, pos, '/');
-
-// Double character
-int match_not_equal   (string source, int pos)    return match_literal(source, pos, "!=");
-int match_lt_equal    (string source, int pos)    return match_literal(source, pos, "<=");
-int match_gt_equal    (string source, int pos)    return match_literal(source, pos, ">=");
-int match_quote_open  (string source, int pos)    return match_literal(source, pos, "'(");
-int match_quote_close (string source, int pos)    return match_literal(source, pos, ")'");
-int match_quasi_close (string source, int pos)    return match_literal(source, pos, ")`");
-int match_starstar    (string source, int pos)    return match_literal(source, pos, "**");
-int match_quasi_open  (string source, int pos)    return match_literal(source, pos, "`(");
-int match_unquote     (string source, int pos)    return match_literal(source, pos, "#,");
-int match_plusplus    (string source, int pos)    return match_literal(source, pos, "++");
-int match_comment     (string source, int pos)    return match_literal(source, pos, "//");
-
-// Special
-int match_comment (string source, int pos)    return match_to_line_end(source, pos, "//");
-int match_string  (string source, int pos)    return match_from_to(source, pos, '"', '"', '\\');
-int match_digit   (string source, int pos)    return match_any(source, pos, {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9'});
-int match_integer (string source, int pos)    return match_one_or_more(source, pos, 
+Pattern whitespace = any({" ", "\r"});
+Pattern comment    = PD::line_comment(lit("//"));
+Pattern string     = PD::string();
+Pattern integer    = PD::integer;
 
 
-}
+
+
+
        default  :
             // Number
             if (isdigit(c)) {
@@ -167,7 +132,7 @@ Token tokenize_identifier (string code)    return {Tokentype::IDENTIFIER, code};
 Token tokenize_keyword    (string code)    return {Tokentype::KEYWORD, code};
 
 
-        
+
  
 // Unknown character error
 int line, column;
@@ -190,3 +155,10 @@ if (scanner.eof()) {
                     origin,
                     line,
                     column);
+
+
+
+
+
+
+}    // namespace Proto

@@ -54,6 +54,8 @@ As well as some more advanced grammatical patterns:
     * function application
 */
 
+namespace PatLib {
+
 
 // ---------------------------------------------------------------------------------------------------------------------
 // Primitive types
@@ -74,8 +76,8 @@ public:
 // size:  size of *value*
 class lit : public Pattern {
 public:
-    lit(char value);
-    lit(std::string value);
+    lit (char value);
+    lit (std::string value);
 
     bool operator() (std::string source, int pos) override;
 
@@ -86,7 +88,7 @@ public:
 
 class until : public Pattern {
 public:
-    until(Pattern pattern);
+    until (Pattern pattern);
 
     bool operator() (std::string source, int pos) override;
     
@@ -97,8 +99,9 @@ public:
 // which: first match in *patterns*
 class any : public Pattern {
 public:
-    any(std::vector<Pattern>     patterns);
-    any(std::vector<std::string> lit_patterns);
+    any (char a[], char b[]);    // override vector constructor of 2 char[] params
+    any (std::vector<Pattern>     patterns);
+    any (std::vector<std::string> lit_patterns);
 
     bool operator() (std::string source, int pos) override;
 
@@ -111,10 +114,11 @@ private:
 
 class seq : public Pattern {
 public:
-    seq(std::vector<Pattern> patterns);
-    seq(std::vector<Pattern> patterns, Pattern separator);
-    seq(std::vector<std::string> lit_patterns);
-    seq(std::vector<std::string> lit_patterns, Pattern separator);
+    seq (char a[], char b[]);    // override vector constructor of 2 char[] params
+    seq (std::vector<Pattern> patterns);
+    seq (std::vector<Pattern> patterns, Pattern separator);
+    seq (std::vector<std::string> lit_patterns);
+    seq (std::vector<std::string> lit_patterns, Pattern separator);
 
     bool operator() (std::string source, int pos) override;
 
@@ -127,9 +131,9 @@ public:
 // amount:  size of *matches*
 class rep : public Pattern {
 public:
-    rep(Pattern pattern);                      // forever
-    rep(Pattern pattern, int n);               // exactly n
-    rep(Pattern pattern, int min, int max);    // at least min, at most max
+    rep (Pattern pattern);                      // forever
+    rep (Pattern pattern, int n);               // exactly n
+    rep (Pattern pattern, int min, int max);    // at least min, at most max
 
     bool operator() (std::string source, int pos) override;
 
@@ -143,44 +147,53 @@ private:
 };
 
 
+}    // namespace PatLib
+
+
+namespace PatDef {
+namespace PL = PatLib;
+
 // ---------------------------------------------------------------------------------------------------------------------
-// Pattern generators
+// Pattern sugar
 // ---------------------------------------------------------------------------------------------------------------------
 
-Pattern at_least   (Pattern pattern, int n)         { return rep(pattern, n, -1); }
-Pattern at_most    (Pattern pattern, int n)         { return rep(pattern, 0, n); }
-Pattern n_times    (Pattern pattern, int n)         { return rep(pattern, n); }
-Pattern optional   (Pattern pattern)                { return rep(pattern, 0, 1); }
-Pattern from_to    (Pattern from, Pattern to)       { return seq({from, until(to), to}); }
-Pattern from_until (Pattern from, Pattern until)    { return seq({from, ::until(until)}); }
+PL::Pattern at_least   (PL::Pattern pattern, int n)             { return PL::rep(pattern, n, -1); }
+PL::Pattern at_most    (PL::Pattern pattern, int n)             { return PL::rep(pattern, 0, n); }
+PL::Pattern n_times    (PL::Pattern pattern, int n)             { return PL::rep(pattern, n); }
+PL::Pattern optional   (PL::Pattern pattern)                    { return PL::rep(pattern, 0, 1); }
+PL::Pattern from_to    (PL::Pattern from, PL::Pattern to)       { return PL::seq({from, PL::until(to), to}); }
+PL::Pattern from_until (PL::Pattern from, PL::Pattern until)    { return PL::seq({from, PL::until(until)}); }
 
 
 // ---------------------------------------------------------------------------------------------------------------------
 // Lexical patterns
 // ---------------------------------------------------------------------------------------------------------------------
 
-Pattern digit    = any({"0", "1", "2", "3", "4", "5", "6", "7", "8", "9"});
-Pattern digits   = rep(digit);
-Pattern integer  = digits;
-Pattern decimal  = seq({digits, lit("."), digits});
-Pattern lower    = any({"a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m",
-                        "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z"});
-Pattern upper    = any({"A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M",
-                        "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"});
-Pattern letter   = any({lower, upper});
-Pattern alphanum = any({letter, digit});
-Pattern newline  = any({"\r\n", "\n", "\r"});
+PL::Pattern digit    = PL::any({"0", "1", "2", "3", "4", "5", "6", "7", "8", "9"});
+PL::Pattern digits   = PL::rep(digit);
+PL::Pattern integer  = digits;
+PL::Pattern decimal  = PL::seq({digits, PL::lit("."), digits});
+PL::Pattern lower    = PL::any({"a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m",
+                                "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z"});
+PL::Pattern upper    = PL::any({"A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M",
+                                "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"});
+PL::Pattern letter   = PL::any({lower, upper});
+PL::Pattern alphanum = PL::any({letter, digit});
+PL::Pattern newline  = PL::any({"\r\n", "\n", "\r"});
 
-Pattern string_double (Pattern escape = lit("/"))    { return from_to(lit('"'), lit('"')); }
-Pattern string_single (Pattern escape = lit("/"))    { return from_to(lit("'"), lit("'")); }
-Pattern string        (Pattern escape = lit("/"))    { return any({string_double(escape), string_single(escape)}); }
-Pattern line_comment  (Pattern start)                { return from_to(start, newline); }
+PL::Pattern string_double (PL::Pattern escape = PL::lit("\\"))    { return from_to(PL::lit('"'), PL::lit('"')); }
+PL::Pattern string_single (PL::Pattern escape = PL::lit("\\"))    { return from_to(PL::lit("'"), PL::lit("'")); }
+PL::Pattern string        (PL::Pattern escape = PL::lit("\\"))    { return PL::any({string_double(escape), string_single(escape)}); }
+PL::Pattern line_comment  (PL::Pattern start)                     { return from_to(start, newline); }
 
 
 // ---------------------------------------------------------------------------------------------------------------------
 // Grammatical patterns
 // ---------------------------------------------------------------------------------------------------------------------
 
+
+
+}    // namespace PatDef
 
 
 #endif

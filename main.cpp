@@ -1,20 +1,19 @@
-#include <fstream>     // get_file_contents
-#include <iostream>    // repl
+#include <fstream>          // get_file_contents
+#include <iostream>         // repl
 #include <string>
+#include "definitions.h"
 #include "syntax.h"
 #include "system.h"
-using namespace std;
-using namespace Syntax;
 
 
 // source: http://insanecoding.blogspot.com/2011/11/how-to-read-in-file-in-c.html
-string get_file_contents (string path) {
+std::string get_file_contents (std::string path) {
     // Open file
     ifstream file (path, ios::in | ios::binary | ios::ate);
     if (!file)    throw (errno);
 
     // Create string of sufficient size
-    string contents;
+    std::string contents;
     contents.resize(file.tellg());
 
     // Read complete file into string
@@ -27,29 +26,29 @@ string get_file_contents (string path) {
 }
 
 
-void run (SourceCode code) {
+void run (Syntax::SourceCode code) {
     // Just print code for now
-    cout << CodeProcessor(code).expand().source << endl;
+    cout << CodeProcessor().expand(code).source << endl;
 }
 
 
 void repl () {
-    string line;
+    std::string line;
     
     for (;;) {
         cout << "> ";
 
         getline(cin, line);
-        run(SourceCode("repl", line));
+        run(Syntax::SourceCode("repl", line));
         
         if (System::in_error)    exit(EXIT_FAILURE);
     }
 }
 
 
-void run_file (string path) {    
-    string code = get_file_contents(path);
-    run(SourceCode(path, code));
+void run_file (std::string path) {    
+    std::string code = get_file_contents(path);
+    run(Syntax::SourceCode(path, code));
     
     if (System::in_error)    exit(EXIT_FAILURE);
 }

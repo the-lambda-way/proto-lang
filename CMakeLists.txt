@@ -1,6 +1,6 @@
 # good doc: https://cliutils.gitlab.io/modern-cmake/
 
-cmake_minimum_required (VERSION 3.15)
+cmake_minimum_required (VERSION 3.12)
 
 project (ProtoLang
          VERSION     0.0.0
@@ -9,6 +9,9 @@ project (ProtoLang
 
 add_executable (proto main.cpp)
 install (TARGETS proto DESTINATION bin)
+
+include_directories ("${PROJECT_SOURCE_DIR}/pattern")
+include_directories ("${PROJECT_SOURCE_DIR}/syntax")
 
 
 # CONFIGURE TESTING
@@ -44,7 +47,6 @@ endmacro ()
 
 # ADD TESTS
 # ----------------------------------------------------------------------------------------------------------------------
-include_directories ("${PROJECT_SOURCE_DIR}/pattern")
-add_test_package    (pattern-test pattern/test.cpp)
+add_test_package (pattern-test pattern/test.cpp)
 
 

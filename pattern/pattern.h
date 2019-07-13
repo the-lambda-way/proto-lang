@@ -52,6 +52,11 @@ As well as some more advanced grammatical patterns:
     * block
     * binary operation
     * function application
+
+TODO: Consider distinguishing compound patterns from simple patterns. Compound patterns will treat each constituent
+    element as distinct. Simple patterns will treat them as parts of a whole. Simple patterns would then be able to
+    remove some bookkeeping code.
+
 */
 
 namespace PatLib {
@@ -86,16 +91,6 @@ public:
 };
 
 
-class until : public Pattern {
-public:
-    until (Pattern pattern);
-
-    bool operator() (std::string source, int pos) override;
-    
-    Pattern pattern;
-};
-
-
 // which: first match in *patterns*
 class any : public Pattern {
 public:
@@ -123,6 +118,16 @@ public:
     bool operator() (std::string source, int pos) override;
 
     std::vector<Pattern> patterns;
+};
+
+
+class until : public Pattern {
+public:
+    until (Pattern pattern);
+
+    bool operator() (std::string source, int pos) override;
+    
+    Pattern pattern;
 };
 
 
@@ -157,9 +162,9 @@ namespace PL = PatLib;
 // Pattern sugar
 // ---------------------------------------------------------------------------------------------------------------------
 
-PL::Pattern at_least   (PL::Pattern pattern, int n)             { return PL::rep(pattern, n, -1); }
-PL::Pattern at_most    (PL::Pattern pattern, int n)             { return PL::rep(pattern, 0, n); }
-PL::Pattern n_times    (PL::Pattern pattern, int n)             { return PL::rep(pattern, n); }
+PL::Pattern at_least   (int n, PL::Pattern pattern)             { return PL::rep(pattern, n, -1); }
+PL::Pattern at_most    (int n, PL::Pattern pattern)             { return PL::rep(pattern, 0, n); }
+PL::Pattern n_times    (int n, PL::Pattern pattern)             { return PL::rep(pattern, n); }
 PL::Pattern optional   (PL::Pattern pattern)                    { return PL::rep(pattern, 0, 1); }
 PL::Pattern from_to    (PL::Pattern from, PL::Pattern to)       { return PL::seq({from, PL::until(to), to}); }
 PL::Pattern from_until (PL::Pattern from, PL::Pattern until)    { return PL::seq({from, PL::until(until)}); }
@@ -170,7 +175,7 @@ PL::Pattern from_until (PL::Pattern from, PL::Pattern until)    { return PL::seq
 // ---------------------------------------------------------------------------------------------------------------------
 
 PL::Pattern digit    = PL::any({"0", "1", "2", "3", "4", "5", "6", "7", "8", "9"});
-PL::Pattern digits   = PL::rep(digit);
+PL::Pattern digits   = at_least(1, digit);
 PL::Pattern integer  = digits;
 PL::Pattern decimal  = PL::seq({digits, PL::lit("."), digits});
 PL::Pattern lower    = PL::any({"a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m",
@@ -190,7 +195,13 @@ PL::Pattern line_comment  (PL::Pattern start)                     { return from_
 // ---------------------------------------------------------------------------------------------------------------------
 // Grammatical patterns
 // ---------------------------------------------------------------------------------------------------------------------
-
+// indent
+// block_comment(open, close)
+// group(open, middle, close)
+// list
+// block
+// binary operation
+// function application
 
 
 }    // namespace PatDef

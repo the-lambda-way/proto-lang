@@ -26,28 +26,6 @@ bool lit::operator() (std::string source, int pos) {
 }
 
 
-// until
-// -------------------------
-until::until (Pattern pattern) : pattern(pattern) {}
-
-bool until::operator() (std::string source, int pos) {
-    // fast check
-    if (pattern(source, pos))    return false;
-
-    // search for pattern
-    start = pos;
-
-    for (end = pos + 1;   end < source.size();   ++end) {
-        if (pattern(source, pos)) {
-            end = pattern.start;
-            break;
-        }
-    }
-
-    return true;
-}
-
-
 // any
 // -------------------------
 any::any (char a[], char b[])                    : any({lit(a), lit(b)})                              {}
@@ -107,6 +85,28 @@ bool seq::operator() (std::string source, int pos) {
     }
 
     end = patterns.back().end;
+    return true;
+}
+
+
+// until
+// -------------------------
+until::until (Pattern pattern) : pattern(pattern) {}
+
+bool until::operator() (std::string source, int pos) {
+    // fast check
+    if (pattern(source, pos))    return false;
+
+    // search for pattern
+    start = pos;
+
+    for (end = pos + 1;   end < source.size();   ++end) {
+        if (pattern(source, pos)) {
+            end = pattern.start;
+            break;
+        }
+    }
+
     return true;
 }
 

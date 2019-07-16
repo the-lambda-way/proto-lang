@@ -3,7 +3,6 @@
 
 #include <string>
 #include <vector>
-using namespace std;
 
 
 /***********************************************************************************************************************
@@ -20,13 +19,22 @@ struct SourceLoc {
     const int         position = 0;
     const int         line     = 0;
     const int         column   = 0;
+    const int         span     = 0;
 };
 
 
 struct SyntaxObject {
-    const std::string token;
+    const std::string name;
     const std::string lexeme;
     const SourceLoc   location;
+};
+
+
+template<class ValueType>
+struct SemanticObject {
+    const std::string  name;
+    const ValueType    value;
+    const SyntaxObject ancestor;
 };
 
 

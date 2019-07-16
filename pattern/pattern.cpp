@@ -1,5 +1,7 @@
 #include "pattern.h"
+#include <limits>
 using namespace PatLib;
+using namespace std;
 
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -26,11 +28,23 @@ bool lit::operator() (std::string source, int pos) {
 }
 
 
+vector<Pattern&> str_to_lits (vector<std::string> strings) {
+    vector<Pattern&> lits;
+    lits.reserve(strings.size());
+
+    for (std::string s : strings) {
+        lits.push_back(lit(s));
+    }
+
+    return lits;
+}
+
+
 // any
 // -------------------------
-any::any (char a[], char b[])                    : any({lit(a), lit(b)})                              {}
-any::any (std::vector<std::string> lit_patterns) : patterns(lit_patterns.begin(), lit_patterns.end()) {}
-any::any (std::vector<Pattern>     patterns)     : patterns(patterns)                                 {}
+any::any (char a[], char b[])               : any(str_to_lits({a, b}))       {}
+any::any (vector<Pattern&>    patterns)     : patterns(patterns)             {}
+any::any (vector<std::string> lit_patterns) : any(str_to_lits(lit_patterns)) {}
 
 bool any::operator() (std::string source, int pos) {
     start = pos;
@@ -48,10 +62,10 @@ bool any::operator() (std::string source, int pos) {
 
 // seq
 // -------------------------
-seq::seq (char a[], char b[])            : seq({lit(a), lit(b)}) {}
-seq::seq (std::vector<Pattern> patterns) : patterns(patterns)    {}
+seq::seq (char a[], char b[])        : seq(str_to_lits({a, b})) {}
+seq::seq (vector<Pattern&> patterns) : patterns(patterns)       {}
 
-seq::seq (std::vector<Pattern> patterns, Pattern separator) {
+seq::seq (vector<Pattern&> patterns, Pattern& separator) {
     // interleave separators
     this->patterns.reserve(2*patterns.size() - 1);
    
@@ -63,14 +77,8 @@ seq::seq (std::vector<Pattern> patterns, Pattern separator) {
     this->patterns.push_back(patterns.back());
 }
 
-seq::seq (std::vector<std::string> lit_patterns)
-    : seq(std::vector<Pattern> (lit_patterns.begin(), lit_patterns.end()))
-{}
-
-seq::seq (std::vector<std::string> lit_patterns, Pattern separator)
-    : seq(std::vector<Pattern> (lit_patterns.begin(), lit_patterns.end()),
-          separator)
-{}
+seq::seq (vector<std::string> lit_patterns)                     : seq(str_to_lits(lit_patterns))            {}
+seq::seq (vector<std::string> lit_patterns, Pattern& separator) : seq(str_to_lits(lit_patterns), separator) {}
 
 bool seq::operator() (std::string source, int pos) {
     // fast check
@@ -79,7 +87,7 @@ bool seq::operator() (std::string source, int pos) {
     // check the rest
     start = pos;
 
-    for (Pattern pattern : patterns) {
+    for (Pattern& pattern : patterns) {
         if (!pattern(source, pos))    return false;
         pos = pattern.end;
     }
@@ -91,7 +99,7 @@ bool seq::operator() (std::string source, int pos) {
 
 // until
 // -------------------------
-until::until (Pattern pattern) : pattern(pattern) {}
+until::until (Pattern& pattern) : pattern(pattern) {}
 
 bool until::operator() (std::string source, int pos) {
     // fast check
@@ -113,10 +121,10 @@ bool until::operator() (std::string source, int pos) {
 
 // rep
 // -------------------------
-rep::rep (Pattern pattern)        : rep(pattern, 0, -1) {}
-rep::rep (Pattern pattern, int n) : rep(pattern, n, n)  {}
+rep::rep (Pattern& pattern)        : rep(pattern, 0, -1) {}
+rep::rep (Pattern& pattern, int n) : rep(pattern, n, n)  {}
 
-rep::rep (Pattern pattern, int min, int max)
+rep::rep (Pattern& pattern, int min, int max)
     : pattern(pattern), min(min), max(max) {
     if (max == -1)    max = std::numeric_limits<int>::max();
 }

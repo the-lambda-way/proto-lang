@@ -5,10 +5,8 @@
 #include "pattern.h"     // reader
 #include "syntax.h"      // token format
 
-
-using namespace PatLib;
+using namespace PL;
 using namespace Syntax;
-namespace PD = PatDef;
 
 
 // ---------------------------------------------------------------------------------------------------------------------

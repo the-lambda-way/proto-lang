@@ -10,11 +10,14 @@ project (ProtoLang
          VERSION     0.0.0
          DESCRIPTION "A fully extensible and modular language.")
 
+include_directories (include)
+
 add_subdirectory (pattern)
 add_subdirectory (syntax)
+add_subdirectory (system)
 
 add_executable (proto main.cpp)
-target_link_libraries (proto pattern syntax)
+target_link_libraries (proto pattern syntax system)
 
 install (TARGETS proto DESTINATION bin)
 

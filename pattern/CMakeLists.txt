@@ -1,1 +1,1 @@
-add_library (PatternLibrary pattern.h pattern.cpp)
+add_library (PatternLibrary pattern.cpp)

@@ -11,6 +11,7 @@
 
 #include <memory>
 #include <string>
+#include <variant>
 #include <vector>
 
 /*
@@ -69,22 +70,24 @@ TODO: Consider distinguishing compound patterns from simple patterns. Compound p
 */
 
 namespace PatLib {
-using pPattern = std::unique_ptr<Pattern>;
+
+// ---------------------------------------------------------------------------------------------------------------------
+// Data types
+// ---------------------------------------------------------------------------------------------------------------------
+// Desired properties:
+// Lightweight: They will be used liberally throughout code.
+// Efficient:   Parsing takes a significant portion of compilation time in large languages.
+// Copyable:    Copy semantics are simpler to reason about and more flexible.
+// Polymorphic: Will be used by many different constructs. A single point of entry is preferred.
+// Recursive:   Nested patterns.
+
+// These requirements are a good fit for algebraic data types over inheritance.
+// Design guided by https://gieseanw.wordpress.com/2017/05/03/a-true-heterogeneous-container-in-c/
+
 
 // ---------------------------------------------------------------------------------------------------------------------
 // Primitive types
 // ---------------------------------------------------------------------------------------------------------------------
-// start: first index of a positive match, undefined for a negative match
-// end:   index after last character of a positive match, undefined for a negative match
-class Pattern {
-public:
-    virtual bool operator() (std::string source, int pos) = 0;
-
-    int start = 0;
-    int end   = 0;
-};
-
-
 // value: base string value
 // size:  size of *value*
 class lit : public Pattern {
@@ -102,7 +105,7 @@ public:
 // which: first match in *patterns*
 class any : public Pattern {
 public:
-    any (std::vector<pPattern>    patterns);
+    any (std::vector<Pattern>    patterns);
     any (std::vector<std::string> lit_patterns);
     any (char a[], char b[]);    // override vector constructor of 2 char[] params
 
@@ -111,52 +114,70 @@ public:
     int which;
 
 private:
-    std::vector<pPattern> patterns;
+    std::vector<Pattern> patterns;
 };
 
 
 class seq : public Pattern {
 public:
-    seq (std::vector<pPattern> patterns);
-    seq (std::vector<pPattern> patterns, pPattern separator);
+    seq (std::vector<Pattern> patterns);
+    seq (std::vector<Pattern> patterns, Pattern separator);
     seq (std::vector<std::string> lit_patterns);
-    seq (std::vector<std::string> lit_patterns, pPattern separator);
+    seq (std::vector<std::string> lit_patterns, Pattern separator);
     seq (char a[], char b[]);    // override vector constructor of 2 char[] params
 
     bool operator() (std::string source, int pos) override;
 
-    std::vector<pPattern> patterns;
+    std::vector<Pattern> patterns;
 };
 
 
 class until : public Pattern {
 public:
-    until (pPattern pattern);
+    until (Pattern pattern);
 
     bool operator() (std::string source, int pos) override;
     
-    pPattern pattern;
+    Pattern pattern;
 };
 
 
 // max:     pass -1 to match as many as possible
-// matches: stores a copy of each match of *pPattern
+// matches: stores a copy of each match of *Pattern
 // amount:  size of *matches*
 class rep : public Pattern {
 public:
-    rep (pPattern pattern);                      // forever
-    rep (pPattern pattern, int n);               // exactly n
-    rep (pPattern pattern, int min, int max);    // at least min, at most max
+    rep (Pattern pattern);                      // forever
+    rep (Pattern pattern, int n);               // exactly n
+    rep (Pattern pattern, int min, int max);    // at least min, at most max
 
     bool operator() (std::string source, int pos) override;
 
-    std::vector<pPattern> matches;
+    std::vector<Pattern> matches;
     int                   amount;
 
 private:
-    pPattern pattern;
+    Pattern pattern;
     int min;
     int max;
+};
+
+
+enum class PatternType {lit, until, any, seq, rep};
+
+class Pattern {
+public:
+    // Constructors
+    Pattern (PatternType type);
+    void construct_lit (std::string value, int size);
+
+    Pattern* operator->();
+
+    const PatternType type;
+    bool operator() (std::string source, int pos);
+
+private:
+    std::variant<lit, until, any, seq, rep> data;
 };
 
 
@@ -170,34 +191,34 @@ namespace PL = PatLib;
 // Pattern sugar
 // ---------------------------------------------------------------------------------------------------------------------
 
-PL::pPattern at_least   (int n, PL::pPattern pattern)              { return PL::rep(std::move(pattern), n, -1); }
-PL::pPattern at_most    (int n, PL::pPattern pattern)              { return PL::rep(std::move(pattern), 0, n); }
-PL::pPattern n_times    (int n, PL::pPattern pattern)              { return PL::rep(std::move(pattern), n); }
-PL::pPattern optional   (PL::pPattern pattern)                     { return PL::rep(std::move(pattern), 0, 1); }
-PL::pPattern from_to    (PL::pPattern from, PL::pPattern to)       { return PL::seq({std::move(from), PL::until(to), std::move(to)}); }
-PL::pPattern from_until (PL::pPattern from, PL::pPattern until)    { return PL::seq({std::move(from), PL::until(until)}); }
+PL::Pattern at_least   (int n, PL::Pattern pattern)              { return PL::rep(pattern, n, -1); }
+PL::Pattern at_most    (int n, PL::Pattern pattern)              { return PL::rep(pattern, 0, n); }
+PL::Pattern n_times    (int n, PL::Pattern pattern)              { return PL::rep(pattern, n); }
+PL::Pattern optional   (PL::Pattern pattern)                     { return PL::rep(pattern, 0, 1); }
+PL::Pattern from_to    (PL::Pattern from, PL::Pattern to)       { return PL::seq({from, PL::until(to), to}); }
+PL::Pattern from_until (PL::Pattern from, PL::Pattern until)    { return PL::seq({from, PL::until(until)}); }
 
 
 // ---------------------------------------------------------------------------------------------------------------------
 // Lexical patterns
 // ---------------------------------------------------------------------------------------------------------------------
 
-PL::pPattern digit    = PL::any({"0", "1", "2", "3", "4", "5", "6", "7", "8", "9"});
-PL::pPattern digits   = at_least(1, digit);
-PL::pPattern integer  = digits;
-PL::pPattern decimal  = PL::seq({digits, PL::lit("."), digits});
-PL::pPattern lower    = PL::any({"a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m",
+PL::Pattern digit    = PL::any({"0", "1", "2", "3", "4", "5", "6", "7", "8", "9"});
+PL::Pattern digits   = at_least(1, digit);
+PL::Pattern integer  = digits;
+PL::Pattern decimal  = PL::seq({digits, PL::lit("."), digits});
+PL::Pattern lower    = PL::any({"a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m",
                                 "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z"});
-PL::pPattern upper    = PL::any({"A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M",
+PL::Pattern upper    = PL::any({"A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M",
                                 "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"});
-PL::pPattern letter   = PL::any({lower, upper});
-PL::pPattern alphanum = PL::any({letter, digit});
-PL::pPattern newline  = PL::any({"\r\n", "\n", "\r"});
+PL::Pattern letter   = PL::any({lower, upper});
+PL::Pattern alphanum = PL::any({letter, digit});
+PL::Pattern newline  = PL::any({"\r\n", "\n", "\r"});
 
-PL::pPattern string_double (PL::Pattern escape = PL::lit("\\"))    { return from_to(PL::lit('"'), PL::lit('"')); }
-PL::pPattern string_single (PL::Pattern escape = PL::lit("\\"))    { return from_to(PL::lit("'"), PL::lit("'")); }
-PL::pPattern string        (PL::Pattern escape = PL::lit("\\"))    { return PL::any({string_double(escape), string_single(escape)}); }
-PL::pPattern line_comment  (PL::Pattern start)                     { return from_to(start, newline); }
+PL::Pattern string_double (PL::Pattern escape = PL::lit("\\"))    { return from_to(PL::lit('"'), PL::lit('"')); }
+PL::Pattern string_single (PL::Pattern escape = PL::lit("\\"))    { return from_to(PL::lit("'"), PL::lit("'")); }
+PL::Pattern string        (PL::Pattern escape = PL::lit("\\"))    { return PL::any({string_double(escape), string_single(escape)}); }
+PL::Pattern line_comment  (PL::Pattern start)                     { return from_to(start, newline); }
 
 
 // ---------------------------------------------------------------------------------------------------------------------

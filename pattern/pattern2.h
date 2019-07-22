@@ -9,9 +9,8 @@
 #define PatDef PD
 #endif
 
-#include <memory>
+#include <iostream>
 #include <string>
-#include <variant>
 #include <vector>
 
 /*
@@ -88,152 +87,55 @@ namespace PatLib {
 // ---------------------------------------------------------------------------------------------------------------------
 // Primitive types
 // ---------------------------------------------------------------------------------------------------------------------
+
+
+// Implementation Guide: https://www.youtube.com/watch?reload=9&v=QGcVXgEVMJg
+
+
 // value: base string value
 // size:  size of *value*
-class lit : public Pattern {
+class lit {
 public:
-    lit (char value);
-    lit (std::string value);
+    lit (const char value);
+    lit (const std::string value);
 
-    bool operator() (std::string source, int pos) override;
+    bool operator() (const std::string source, int pos);
 
-    std::string value;
-    int         size;
+    int start;
+    int end;
+    const std::string value;
+    const int         size;
 };
 
+using Pattern = std::vector<lit>;
 
-// which: first match in *patterns*
-class any : public Pattern {
-public:
-    any (std::vector<Pattern>    patterns);
-    any (std::vector<std::string> lit_patterns);
-    any (char a[], char b[]);    // override vector constructor of 2 char[] params
-
-    bool operator() (std::string source, int pos) override;
-
-    int which;
-
-private:
-    std::vector<Pattern> patterns;
-};
+bool parse (const Pattern& pattern, const std::string source, int pos) {
+    for (auto p : pattern) {
+        if (!p(source, pos))    { return false; }
+        else                    { pos = p.end; }
+    }
+    return true;
+}
 
 
-class seq : public Pattern {
-public:
-    seq (std::vector<Pattern> patterns);
-    seq (std::vector<Pattern> patterns, Pattern separator);
-    seq (std::vector<std::string> lit_patterns);
-    seq (std::vector<std::string> lit_patterns, Pattern separator);
-    seq (char a[], char b[]);    // override vector constructor of 2 char[] params
-
-    bool operator() (std::string source, int pos) override;
-
-    std::vector<Pattern> patterns;
-};
-
-
-class until : public Pattern {
-public:
-    until (Pattern pattern);
-
-    bool operator() (std::string source, int pos) override;
-    
+int main () {
     Pattern pattern;
-};
+    pattern.emplace_back(lit("Hello"));
+    pattern.emplace_back(lit(", world!"));
 
-
-// max:     pass -1 to match as many as possible
-// matches: stores a copy of each match of *Pattern
-// amount:  size of *matches*
-class rep : public Pattern {
-public:
-    rep (Pattern pattern);                      // forever
-    rep (Pattern pattern, int n);               // exactly n
-    rep (Pattern pattern, int min, int max);    // at least min, at most max
-
-    bool operator() (std::string source, int pos) override;
-
-    std::vector<Pattern> matches;
-    int                   amount;
-
-private:
-    Pattern pattern;
-    int min;
-    int max;
-};
-
-
-enum class PatternType {lit, until, any, seq, rep};
-
-class Pattern {
-public:
-    // Constructors
-    Pattern (PatternType type);
-    void construct_lit (std::string value, int size);
-
-    Pattern* operator->();
-
-    const PatternType type;
-    bool operator() (std::string source, int pos);
-
-private:
-    std::variant<lit, until, any, seq, rep> data;
-};
+    if (parse(pattern, "Hello, world!", 0)) {
+        for (const auto p : pattern)
+            std::cout << "(" << p.start << ", " << p.end << ")" << std::endl;
+    }
+    else {
+        std::cout << "No match." << std::endl;
+    }
+}
 
 
 }    // namespace PatLib
 
 
-namespace PatDef {
-namespace PL = PatLib;
-
-// ---------------------------------------------------------------------------------------------------------------------
-// Pattern sugar
-// ---------------------------------------------------------------------------------------------------------------------
-
-PL::Pattern at_least   (int n, PL::Pattern pattern)              { return PL::rep(pattern, n, -1); }
-PL::Pattern at_most    (int n, PL::Pattern pattern)              { return PL::rep(pattern, 0, n); }
-PL::Pattern n_times    (int n, PL::Pattern pattern)              { return PL::rep(pattern, n); }
-PL::Pattern optional   (PL::Pattern pattern)                     { return PL::rep(pattern, 0, 1); }
-PL::Pattern from_to    (PL::Pattern from, PL::Pattern to)       { return PL::seq({from, PL::until(to), to}); }
-PL::Pattern from_until (PL::Pattern from, PL::Pattern until)    { return PL::seq({from, PL::until(until)}); }
-
-
-// ---------------------------------------------------------------------------------------------------------------------
-// Lexical patterns
-// ---------------------------------------------------------------------------------------------------------------------
-
-PL::Pattern digit    = PL::any({"0", "1", "2", "3", "4", "5", "6", "7", "8", "9"});
-PL::Pattern digits   = at_least(1, digit);
-PL::Pattern integer  = digits;
-PL::Pattern decimal  = PL::seq({digits, PL::lit("."), digits});
-PL::Pattern lower    = PL::any({"a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m",
-                                "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z"});
-PL::Pattern upper    = PL::any({"A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M",
-                                "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"});
-PL::Pattern letter   = PL::any({lower, upper});
-PL::Pattern alphanum = PL::any({letter, digit});
-PL::Pattern newline  = PL::any({"\r\n", "\n", "\r"});
-
-PL::Pattern string_double (PL::Pattern escape = PL::lit("\\"))    { return from_to(PL::lit('"'), PL::lit('"')); }
-PL::Pattern string_single (PL::Pattern escape = PL::lit("\\"))    { return from_to(PL::lit("'"), PL::lit("'")); }
-PL::Pattern string        (PL::Pattern escape = PL::lit("\\"))    { return PL::any({string_double(escape), string_single(escape)}); }
-PL::Pattern line_comment  (PL::Pattern start)                     { return from_to(start, newline); }
-
-
-// ---------------------------------------------------------------------------------------------------------------------
-// Grammatical patterns
-// ---------------------------------------------------------------------------------------------------------------------
-// indent
-// block_comment(open, close)
-// group(open, middle, close)
-// list
-// block
-// binary operation
-// function application
-
-
-}    // namespace PatDef
 
 
 #endif

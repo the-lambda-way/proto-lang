@@ -3,7 +3,7 @@
 
 Proto is on a mission to decentralize programming from the monolithic languages we currently are forced to operate within. Too much attention is spent on mastering the idiosyncracies and constraints of existing languages, when we should be focused solely on the considerations of the domains under consideration.
 
-Proto divides this problem into two aspects. syntax conventions and execution models.
+Proto divides this problem into two aspects: syntax conventions and execution models.
 
 I propose the radical view that syntax should not defined for us, but that conventions should arise naturally out of common usage, just as they do within science, engineering, and in natural language. This is already the situation in API design - Proto would simply extend this to syntax usage as well. Language-oriented programming environments like Racket and JetBrains MPS currently have a lot to offer in this area, but I think the situation can be pushed even further. Working with syntax extensions should be as easy as working with functions or objects. I consider Racket to be the forerunner in this area, but it is currently anchored to its lisp roots. A newly announced effort by Matthew Flatt, dubbed Racket2 (<https://github.com/racket/racket/wiki/Racket2>), is a step in this direction, and worth keeping an eye on.
 

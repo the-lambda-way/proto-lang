@@ -48,7 +48,8 @@ enum class TokenLiteral {
 
 struct Token {
     const int   type;
-    const void* value;};
+    const void* value;
+};
 
 
 

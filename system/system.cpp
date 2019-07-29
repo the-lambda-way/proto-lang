@@ -1,7 +1,7 @@
 #include "system.h"
 #include <iostream>    // cout
 #include "syntax.h"
-using namespace Syntax;
+using namespace std;
 
 
 bool System::in_error = false;
@@ -15,7 +15,7 @@ void System::report (string msg, string code, SourceLoc location) {
     cout << "Error: " << msg << endl
          << line_num << " | " << code << endl
          << arrow << endl
-         << "In " << location.line << "::" << location.column << "::" << location.source << endl;}
+         << "In " << location.line << "::" << location.column << "::" << location.origin << endl;}
 
 
 void System::fail (string msg, string code, SourceLoc location) {

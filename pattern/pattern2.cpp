@@ -9,280 +9,315 @@
 #define PatDef PD
 #endif
 
-#include <array>
-#include <iostream>
+#include <functional>     // std::search searchers
+#include <iostream>       // cout
 #include <string>
 #include <string_view>
-#include <tuple>
-#include <vector>
+#include <utility>        // std::pair
 
-/*
-************************************************************************************************************************
+#include <range/v3/all.hpp>
+using namespace ranges;
+using std::string_view;
+
+
+/***********************************************************************************************************************
 * Pattern
-* The Pattern library provides functions that recognize a pattern beginning at a position of a string, keeping track of
-*     source locations, while avoiding any string processing.
+* The Pattern library provides functions that recognize a pattern beginning at a position of a string.
 * 
-************************************************************************************************************************
-
-Source locations are saved as *start* (inclusive) and *end* (exclusive) indices for all pattern matchers.
-
-Here are the primitive matching operations:
-    * lit
-    * until
-    * any
-    * seq
-    * rep (min, max)
-
-There are several derived matching operations:
-    * at_least   = rep(p, n, -1)
-    * at_most    = rep(p, 0, n)
-    * n_times    = rep(p, n, n)
-    * optional   = rep(p, 0, 1)
-    * from_to    = seq(p, until(p2), p2)
-    * from_until = seq(p, until(p2))
-    
-There are several built-in lexical patterns:
-    * digit
-    * digits
-    * integer
-    * decimal
-    * lower
-    * upper
-    * letter
-    * alphanum
-    * newline
-    * string_double(escape = "/")
-    * string_single(escape = "/")
-    * string(escape = "/")
-    * line_comment(start)
-    
-As well as some more advanced grammatical patterns:
-    * indent
-    * block_comment(open, close)
-    * group(open, middle, close)
-    * list
-    * block
-    * binary operation
-    * function application
-*/
-
+***********************************************************************************************************************/
 
 // ---------------------------------------------------------------------------------------------------------------------
 // Data types
 // ---------------------------------------------------------------------------------------------------------------------
-// Desired properties:
-// Lightweight: They will be used liberally throughout code.
-// Efficient:   Parsing takes a significant portion of compilation time in large languages.
-// Copyable:    Copy semantics are simpler to reason about and more flexible.
-// Polymorphic: Will be used by many different constructs. A single point of entry is preferred.
-// Recursive:   Nested patterns.
-
+// Code -> ParseTree -> SyntaxTree
 
 // Design:
-// Pattern literal: a literal description of source code
-// Pattern type:    a class of pattern literals
-// Pattern:         the type of a pattern type
-// Datum:           a concrete instance of a Pattern
-// Parser:          transforms a string into structured source code
+// The library tries to be representation-agnostic, providing generic tools and concepts that model common abstractions
+//     in the domain. The following terms are used througout the library.
+
+// Patterns structure source
+// Pattern         : a convenient representation (data format) of a parse tree, similar to EBNF form
+// Pattern literal : matches a literal code element
+// Pattern type    : matches a class of code elements
+// Pattern concept : matches a combination of pattern types and pattern literals
+
+// A Pattern is just one convenient way to represent a set of parsing actions. The library can be used without it.
+
+// Datum           : a concrete instance of a Pattern
+// Parser          : transforms a string into structured source code
+// ParserObject    : a managed parser that maintains the results of a parse
 
 
-// ---------------------------------------------------------------------------------------------------------------------
-// Data Types
-// ---------------------------------------------------------------------------------------------------------------------
-using std::size_t;
-
+// A Datum is a structured string.
 class Datum {
 public:
-    Datum () { }
-    Datum (std::string id, std::initializer_list<Datum> members) : members(members.begin(), members.end()) { };
-    
-    std::string id = "";
-    std::vector<Datum*> members = {};
-
-    Datum& operator[] (size_t index)    { return *members[index]; }
+    const std::string head = "";
+    const std::vector<Datum*> tail = { };
+    Datum operator[] (size_t index) const    { return *tail[index]; }
 };
 
 
-// A SourceView is integer pair demarking a span of source code, with no pointer to the original source.
-// std::string_view throws std::out_of_range if if start > source.size() when calling view(source)
-class SourceView {
-public:
-    // Validity
-    constexpr static auto npos = size_t(-1);
-    operator bool() const          { return start != npos; }
-    SourceView (const bool& value) { }
-
-    
-    // Metadata
-    SourceView (size_t start, size_t end) : start(std::move(start)), end(std::move(end)) { }
-    const size_t start = npos;
-    const size_t end   = npos;
-
-    std::string_view view (const std::string& source) const {
-        return std::string_view(source).substr(start, end - start);
-    }
-
-    std::string get (const std::string& source) const {
-        return source.substr(start, end - start);
-    }
-
-    size_t size()    { return end - start; }
-};
-
-
-class DatumView : public SourceView {
-public:
-    // Structure
-    std::vector<SourceView> members;
-
-    SourceView operator[] (const size_t& index)    { return members[index]; }
-
-    std::vector<std::string_view> view_structure (const std::string& source) const {
-        std::vector<std::string_view> result;
-        result.reserve(members.size());
-
-        for (auto m : members)    result.emplace_back(std::move(m));
-
-        return result;
-    }
-
-    Datum get_datum (const std::string& source) const {
-        Datum result;
-        
-    }
+// ---------------------------------------------------------------------------------------------------------------------
+// Concepts
+// ---------------------------------------------------------------------------------------------------------------------
+// A Lexer transforms a sequence of input characters into a ParseTree
+template <typename L, typename S, typename ParseTree>
+concept bool Lexer =
+    requires (L lexer, const S& source) {
+        { std::invoke(*lexer, source) } -> std::pair<iterator_t<S>, ParseTree>;
 };
 
 
 // A Parser transforms a sequence of input characters into a SyntaxTree
-template <typename P>
+template <typename P, typename S, typename SyntaxTree>
 concept bool Parser =
-    requires (P parser, const std::string& source, int start) {
-    { operator()(const parser&, source, start) } -> SyntaxTree;
-    { to_string(parser&)                       } -> std::string;
+    requires (P parser, const S& source) {
+        { std::invoke(*parser, source) } -> std::pair<iterator_t<S>, SyntaxTree>;
+};
+
+
+// Code is a container of objects which can be compared and iterated over
+template <typename C>
+concept bool Code =
+    requires (C code) {
+        { range::begin(code) };
+        { range::end(code)   };
 };
 
 
 // ---------------------------------------------------------------------------------------------------------------------
-// Literal Parsers
+// Algorithms
 // ---------------------------------------------------------------------------------------------------------------------
+// These algorithms advance the source view upon a match, so that iteration through the source is automatically handled.
 
-SourceView parse (const std::string& lit_pattern, const std::string& source, const int& start) {
+
+std::optional<string_view> match_literal (string_view& source, string_view pattern) {
     // fast checks
-    if (lit_pattern[0] != source[start])               return false;    // usual result
-    if (source.size() - start < lit_pattern.size())    return false;    // faster than checking every loop
+    if (source.front() != pattern.front())     return {};    // usual result
+    if (source.length() < pattern.length())    return {};    // save a check every loop
 
     // check the rest
-    int end;
+    int i = 1;
     
-    for (end = start + 1;   end < start + lit_pattern.size();   ++end)
-        if (lit_pattern[end - start] != source[end])    return false;
+    for ( ; i != pattern.length(); ++i)
+        if (source[i] != pattern[i])    return {};
 
-    return {start, end};
+    string_view result = source.substr(0, pattern.length());
+    source.remove_prefix(i-1);
+
+    return result;
 }
 
 
-DatumView parse_datum (const Datum& lit_pattern, const std::string& source, const int& start) {
-    // fast check
-    SourceView result = parse_datum(lit_pattern[0], source, start);
-    if (!result)    return false;
+// First return value is the subview that was skipped, before the pattern
+// Second return value is the matched pattern
+std::optional<std::pair<string_view, string_view>>
+match_find (string_view& source, string_view pattern) {
 
-    // check the rest
-    int position = start;
+    // If the pattern is a single character, then every character must be checked
+    if (pattern.length() == 1) {
+        auto searcher = std::default_searcher(pattern.begin(), pattern.end());
+        auto [first, last] = searcher(source.begin(), source.end());
 
-    for (auto p = lit_pattern.begin() + 1;   p != lit_pattern.end;   ++p) {
-        SourceView result = parse(*p, source, position);
-        if (!result)    return false;
+        if (first == source.end())    return {};
 
-        position = result.end;
+        string_view first_part(source.begin(), std::distance(source.begin(), first));
+        string_view second_part(first, std::distance(first, last));
+        return std::make_pair(first_part, second_part);
     }
 
-    return {start, position};
+    // If the pattern is more than one character, Boyer-Moore search may be more efficient
+    else {
+        auto searcher = std::boyer_moore_searcher(pattern.begin(), pattern.end());
+        auto [first, last] = searcher(source.begin(), source.end());
+
+        if (first == source.end())    return {};   
+
+        string_view first_part(source.begin(), std::distance(source.begin(), first));
+        string_view second_part(first, std::distance(first, last));
+        return std::make_pair(first_part, second_part);
+    }
 }
 
 
-SourceView parse_any (const std::initializer_list<Datum>& patterns, const std::string& source, const int& start) {
-    for (auto& pattern : patterns) {
-        SourceView result = parse(pattern, source, start);
-        if (result)    return result;
+template <range S, range P>
+std::pair<iterator_t<S>, iterator_t<P>>
+match_any (const S& source, const P& patterns) {
+    for (const range& p : patterns) {
+        auto [s_end, p_end] = mismatch(source, p);
+        if (p_end == end(p))    return std::make_pair(s_end, &p);
     }
 
-    return false;
+    return std::make_pair(begin(source), end(patterns));
 }
 
 
-DatumView parse_seq (const std::initializer_list<Datum>& patterns, const std::string& source, const int& start) {
-    // fast check
-    SourceView result = parse(*(patterns.begin()), source, start);
-    if (!result)    return false;
+// Change to return a copy of each subpattern match
+template <typename End, range S, range P>
+std::pair<End, std::vector<*S>> match_seq (const S& source, const P& patterns) {
+    auto copy = subrange(source);
+
+    for (const range& p : patterns) {
+        auto [s_end, p_end] = mismatch(copy, p);
+        if (p_end != end(p))    return subrange(source);
+        copy.advance(iter_distance(copy.begin(), s_end));
+    }
+
+    return copy;
+}
+
+
+subrange match_amount (range source,
+                       range pattern,
+                       const int min = 0,
+                       const int max = std::numeric_limits<int>::max()) {
     
-    // check the rest
-    int position = start;
+    if constexpr (min < 0)    return subrange(source);
 
-    for (auto p = patterns.begin() + 1;   p != patterns.end();   ++p) {
-        SourceView result = parse(*p, source, position);
-        if (!result)    return false;
+}
 
-        position = result.end;
+
+
+// ---------------------------------------------------------------------------------------------------------------------
+// Primitive nodes
+// ---------------------------------------------------------------------------------------------------------------------
+
+template <range S, typename CharT = std::string>
+class lit {
+public:
+    CharT value;
+
+    iterator_t<S> operator() (const S&& source) {
+        return match_begin(std::forward<S>(source), value);
     }
+};
 
-    return {start, position};
+
+
+
+
+
+
+// which: first match in *patterns*
+class any : public Pattern {
+public:
+    any (std::vector<pPattern>    patterns);
+    any (std::vector<std::string> lit_patterns);
+    any (char a[], char b[]);    // override vector constructor of 2 char[] params
+
+    bool operator() (std::string source, int pos) override;
+
+    int which;
+
+private:
+    std::vector<pPattern> patterns;
+};
+
+
+class seq : public Pattern {
+public:
+    seq (std::vector<pPattern> patterns);
+    seq (std::vector<pPattern> patterns, pPattern separator);
+    seq (std::vector<std::string> lit_patterns);
+    seq (std::vector<std::string> lit_patterns, pPattern separator);
+    seq (char a[], char b[]);    // override vector constructor of 2 char[] params
+
+    bool operator() (std::string source, int pos) override;
+
+    std::vector<pPattern> patterns;
+};
+
+
+class until : public Pattern {
+public:
+    until (pPattern pattern);
+
+    bool operator() (std::string source, int pos) override;
+    
+    pPattern pattern;
+};
+
+
+// max:     pass -1 to match as many as possible
+// matches: stores a copy of each match of *pPattern
+// amount:  size of *matches*
+class rep : public Pattern {
+public:
+    rep (pPattern pattern);                      // forever
+    rep (pPattern pattern, int n);               // exactly n
+    rep (pPattern pattern, int min, int max);    // at least min, at most max
+
+    bool operator() (std::string source, int pos) override;
+
+    std::vector<pPattern> matches;
+    int                   amount;
+
+private:
+    pPattern pattern;
+    int min;
+    int max;
+};
+
+
+
+// ---------------------------------------------------------------------------------------------------------------------
+// Syntactic sugar
+// ---------------------------------------------------------------------------------------------------------------------
+class Pattern {};
+
+
+Pattern operator| (Pattern left, const Pattern& right) {
+    return any(left, right);
 }
 
 
-// ---------------------------------------------------------------------------------------------------------------------
-// 
-// ---------------------------------------------------------------------------------------------------------------------
-
-
 
 // ---------------------------------------------------------------------------------------------------------------------
-// 
+// Pattern sugar
 // ---------------------------------------------------------------------------------------------------------------------
 
+Pattern at_least   (int n, Pattern pattern)         { return rep(pattern, n, -1); }
+Pattern at_most    (int n, Pattern pattern)         { return rep(pattern, 0, n); }
+Pattern n_times    (int n, Pattern pattern)         { return rep(pattern, n); }
+Pattern optional   (Pattern pattern)                { return rep(pattern, 0, 1); }
+Pattern from_to    (Pattern from, Pattern to)       { return seq {from, until(to), to}; }
+Pattern from_until (Pattern from, Pattern until)    { return seq {from, until(until)}; }
 
 
+// ---------------------------------------------------------------------------------------------------------------------
+// Lexical patterns
+// ---------------------------------------------------------------------------------------------------------------------
+
+Pattern digit    = any {"0", "1", "2", "3", "4", "5", "6", "7", "8", "9"};
+Pattern digits   = at_least(1, digit);
+Pattern integer  = digits;
+Pattern decimal  = seq {digits, ".", digits};
+Pattern lower    = any {"a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m",
+                        "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z"};
+Pattern upper    = any {"A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M",
+                        "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"};
+Pattern letter   = any {lower, upper};
+Pattern alphanum = any {letter, digit};
+Pattern newline  = any {"\r\n", "\n", "\r"};
+
+Pattern string_double (Pattern escape = lit("\\"))    { return from_to(lit('"'), lit('"')); }
+Pattern string_single (Pattern escape = lit("\\"))    { return from_to(lit("'"), lit("'")); }
+Pattern string        (Pattern escape = lit("\\"))    { return any {string_double(escape), string_single(escape)}; }
+Pattern line_comment  (Pattern start)                 { return from_to(start, newline); }
 
 
+// ---------------------------------------------------------------------------------------------------------------------
+// Grammatical patterns
+// ---------------------------------------------------------------------------------------------------------------------
+// indent
+// block_comment(open, close)
+// group(open, middle, close)
+// list
+// block
+// binary operation
+// function application
 
 
-int main (int, char**) {
-    std::string text = "print(\"Hello, World!\n\");";
-    std::cout << "Source: " << text << "\n";
-
-
-    // Direct use
-    lit open       = {"print("};
-    lit close      = {")"};
-    any body       = {"Hello, World!", "Goodnight, Moon!"};
-    lit terminator = ";"
-    seq print_str  = {open, body, close, terminator};
-
-    print_str(text);
-
-    std::cout << "\n1. Direct calls:\n";
-    std::cout << print_str.to_string() << ";    match = (" << print_str.start << ", " << print_str.end << ") \"" << print_str.get_match(text) << "\"\n";
-    std::cout << print_str[0].to_string() << "; match = (" << print_str[0].start << ", " << print_str[0].end << ") \"" << print_str[0].get_match(text) << "\"\n";
-    std::cout << print_str[1].to_string() << "; match = (" << print_str[1].start << ", " << print_str[1].end << ") \"" << print_str[1].get_match(text) << "\"\n";
-    std::cout << print_str[2].to_string() << "; match = (" << print_str[2].start << ", " << print_str[2].end << ") \"" << print_str[2].get_match(text) << "\"\n";
-    std::cout << "Type: " << typeid(print_str).name() << "\n";
-
-
-     // Concept
-    Parser open2       = lit {"print("};
-    Parser close2      = lit {")"};
-    Parser body2       = any {"Hello, World!", "Goodnight, Moon!"};
-    Parser terminator2 = lit(";")
-    Parser print_str2  = seq {open2, body2, close2, terminator2};
-
-    print_str2(text);
-
-    std::cout << "\n1. Direct calls:\n";
-    std::cout << print_str2.to_string() << ";    match = (" << print_str2.start << ", " << print_str2.end << ") \"" << print_str.get_match(text) << "\"\n";
-    std::cout << print_str2[0].to_string() << "; match = (" << print_str2[0].start << ", " << print_str2[0].end << ") \"" << print_str2[0].get_match(text) << "\"\n";
-    std::cout << print_str2[1].to_string() << "; match = (" << print_str2[1].start << ", " << print_str2[1].end << ") \"" << print_str2[1].get_match(text) << "\"\n";
-    std::cout << print_str2[2].to_string() << "; match = (" << print_str2[2].start << ", " << print_str2[2].end << ") \"" << print_str2[2].get_match(text) << "\"\n";
-    std::cout << "Type: " << typeid(print_str2).name() << "\n";
-}
 
 
 

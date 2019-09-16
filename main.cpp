@@ -8,6 +8,8 @@
 
 // source: http://insanecoding.blogspot.com/2011/11/how-to-read-in-file-in-c.html
 std::string get_file_contents (std::string path) {
+    using namespace std;
+    
     // Open file
     ifstream file (path, ios::in | ios::binary | ios::ate);
     if (!file)    throw (errno);
@@ -20,8 +22,6 @@ std::string get_file_contents (std::string path) {
     file.seekg(0, ios::beg);
     file.read(&contents[0], contents.size());
 
-    // Wrapup
-    file.close();
     return(contents);
 }
 

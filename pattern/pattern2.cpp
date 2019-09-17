@@ -313,6 +313,142 @@ constexpr std::optional<string_view> match_join (string_view& source, Scanner&&.
 
 
 
+// Implement
+
+// Default seq function treats spaces and tab as whitespace
+// struct sequencer
+// {
+//     char_predicate is_whitespace = default_is_whitespace;
+
+//     scanner operator (scanner&& first, scanner&&... rest)
+//     {
+//         return operator()(std::forward<scanner>(first), std::forward<scanner>(rest)...,
+//                             is_whitespace);
+//     }
+
+//     scanner operator (scanner first, scanner..., rest, char_predicate is_whitespace)
+//     {
+//         return [=] (string_view& source) -> bool
+//         {
+//             return scan_sequence(first, rest..., is_whitespace);
+//         };
+//     }
+// } seq;
+
+
+// // Default delim function adds <optional whitespace, comma, whitespace> as a delimiter
+// struct delimited_sequencer
+// {
+//     const char_predicate is_whitespace = default_is_whitespace;
+//     const char_predicate is_delimiter  = is_comma;
+
+//     scanner operator (scanner&& first, scanner&&... rest)
+//     {
+//         return operator()(std::forward<scanner>(first), std::forward<scanner>(rest)...,
+//                             is_delimiter, is_whitespace);
+//     }
+    
+//     scanner operator (scanner&& first, scanner&&... rest, char_predicate is_delimiter)
+//     {
+//         return operator()(std::forward<scanner>(first), std::forward<scanner>(rest)...,
+//                             is_delimiter, is_whitespace);
+//     }
+
+//     scanner operator (scanner first, scanner... rest
+//                         char_predicate is_delimiter,
+//                         char_predicate is_whitespace)
+//     {
+//         return [=] (string_view& source) -> bool
+//         {
+//             return scan_delimiter(first, rest..., is_delimiter, is_whitespace);
+//         };
+//     }
+// } delim;
+
+
+// template <typename... Scanner>
+// constexpr bool scan_sequence (string_view& source,
+//                               scanner first, Scanner... rest,
+//                               char_predicate is_whitespace = default_is_whitespace)
+// {
+//     return (first(source) && ...
+//             && scan_while(source, is_whitespace)
+//             && rest(source));
+// }
+
+
+
+// // I think these tuple generators are broken or suboptimal
+
+
+// // Only return a tuple if all generator arguments are executed successfully
+// template <typename Result, typename Func>
+// constexpr std::optional<Result>
+// generate_tuple_while (Func f)
+// {
+//     return f();
+// }
+
+
+// template <typename Result, typename Func, typename... Func>
+// constexpr std::optional<Result>
+// generate_tuple_while (Func first, Funcs... rest)
+// {
+//     auto a = first();
+//     if (!a)    return {};
+
+//     return std::tuple_cat(*a, generate_tuple_while(rest...).value_or(tuple<>{}));
+// }
+
+
+// template <scanner... S, typename Result>
+// constexpr std::optional<Result>
+// match_sequence (string_view& source,
+//                 scanner first, S... rest,
+//                 char_predicate is_whitespace = default_is_whitespace)
+// {
+//     auto insert_whitespace_before =
+//         [=, p = std::move(is_whitespace)] (string_view& source, scanner s) -> std::optional<string_view>
+//         {
+//             if (!(scan_while(source, is_whitespace)))    return {};
+//             return match_with(source, s);
+//         }
+
+//     auto result = generate_tuple_while(first(source), insert_whitespace_before(source, rest)...);
+//     int size = std::tuple_size<result>;
+
+//     if (size != sizeof... (rest) + 1)    return {};
+//     return result;
+// }
+
+
+// template <scanner... S>
+// constexpr std::optional<Result>
+// match_delimiter (string_view& source,
+//                  scanner first, S... rest,
+//                  char_predicate is_delimiter = is_comma,
+//                  char_predicate is_whitespace = default_is_whitespace)
+// {
+//     auto insert_delimiter_before =
+//         [=, d = std::move(is_delimiter)] (string_view& source, scanner s) -> std::optional<string_view>
+//         {
+//             scan_while(source, is_whitespace);
+//             if (!( scan_with(source, d) && scan_while(source, is_whitespace) )
+//                 return {};
+
+//             return match_with(source, s);
+//         }
+
+//     auto result = generate_tuple_while(first(source), insert_delimiter_before(source, rest)...);
+//     int size = std::tuple_size<result>;
+
+//     if (size != sizeof... (rest) + 1)    return {};
+//     return result;
+// }
+
+
+
+
 
 
 
@@ -486,142 +622,6 @@ matcher join (scanners... scanners)
         return match_join(source, std::move(s)...);
     };
 }
-
-
-
-
-// Implement
-
-// Default seq function treats spaces and tab as whitespace
-// struct sequencer
-// {
-//     char_predicate is_whitespace = default_is_whitespace;
-
-//     scanner operator (scanner&& first, scanner&&... rest)
-//     {
-//         return operator()(std::forward<scanner>(first), std::forward<scanner>(rest)...,
-//                             is_whitespace);
-//     }
-
-//     scanner operator (scanner first, scanner..., rest, char_predicate is_whitespace)
-//     {
-//         return [=] (string_view& source) -> bool
-//         {
-//             return scan_sequence(first, rest..., is_whitespace);
-//         };
-//     }
-// } seq;
-
-
-// // Default delim function adds <optional whitespace, comma, whitespace> as a delimiter
-// struct delimited_sequencer
-// {
-//     const char_predicate is_whitespace = default_is_whitespace;
-//     const char_predicate is_delimiter  = is_comma;
-
-//     scanner operator (scanner&& first, scanner&&... rest)
-//     {
-//         return operator()(std::forward<scanner>(first), std::forward<scanner>(rest)...,
-//                             is_delimiter, is_whitespace);
-//     }
-    
-//     scanner operator (scanner&& first, scanner&&... rest, char_predicate is_delimiter)
-//     {
-//         return operator()(std::forward<scanner>(first), std::forward<scanner>(rest)...,
-//                             is_delimiter, is_whitespace);
-//     }
-
-//     scanner operator (scanner first, scanner... rest
-//                         char_predicate is_delimiter,
-//                         char_predicate is_whitespace)
-//     {
-//         return [=] (string_view& source) -> bool
-//         {
-//             return scan_delimiter(first, rest..., is_delimiter, is_whitespace);
-//         };
-//     }
-// } delim;
-
-
-// template <typename... Scanner>
-// constexpr bool scan_sequence (string_view& source,
-//                               scanner first, Scanner... rest,
-//                               char_predicate is_whitespace = default_is_whitespace)
-// {
-//     return (first(source) && ...
-//             && scan_while(source, is_whitespace)
-//             && rest(source));
-// }
-
-
-
-// // I think these tuple generators are broken or suboptimal
-
-
-// // Only return a tuple if all generator arguments are executed successfully
-// template <typename Result, typename Func>
-// constexpr std::optional<Result>
-// generate_tuple_while (Func f)
-// {
-//     return f();
-// }
-
-
-// template <typename Result, typename Func, typename... Func>
-// constexpr std::optional<Result>
-// generate_tuple_while (Func first, Funcs... rest)
-// {
-//     auto a = first();
-//     if (!a)    return {};
-
-//     return std::tuple_cat(*a, generate_tuple_while(rest...).value_or(tuple<>{}));
-// }
-
-
-// template <scanner... S, typename Result>
-// constexpr std::optional<Result>
-// match_sequence (string_view& source,
-//                 scanner first, S... rest,
-//                 char_predicate is_whitespace = default_is_whitespace)
-// {
-//     auto insert_whitespace_before =
-//         [=, p = std::move(is_whitespace)] (string_view& source, scanner s) -> std::optional<string_view>
-//         {
-//             if (!(scan_while(source, is_whitespace)))    return {};
-//             return match_with(source, s);
-//         }
-
-//     auto result = generate_tuple_while(first(source), insert_whitespace_before(source, rest)...);
-//     int size = std::tuple_size<result>;
-
-//     if (size != sizeof... (rest) + 1)    return {};
-//     return result;
-// }
-
-
-// template <scanner... S>
-// constexpr std::optional<Result>
-// match_delimiter (string_view& source,
-//                  scanner first, S... rest,
-//                  char_predicate is_delimiter = is_comma,
-//                  char_predicate is_whitespace = default_is_whitespace)
-// {
-//     auto insert_delimiter_before =
-//         [=, d = std::move(is_delimiter)] (string_view& source, scanner s) -> std::optional<string_view>
-//         {
-//             scan_while(source, is_whitespace);
-//             if (!( scan_with(source, d) && scan_while(source, is_whitespace) )
-//                 return {};
-
-//             return match_with(source, s);
-//         }
-
-//     auto result = generate_tuple_while(first(source), insert_delimiter_before(source, rest)...);
-//     int size = std::tuple_size<result>;
-
-//     if (size != sizeof... (rest) + 1)    return {};
-//     return result;
-// }
 
 
 } // namespace Match

@@ -1,5 +1,5 @@
-#ifndef PATTERN_H
-#define PATTERN_H
+#ifndef PATTERN2_H
+#define PATTERN2_H
 
 #ifndef PL
 #define PatLib PL
@@ -17,13 +17,23 @@
 #include <type_traits>    // Destructurable concept
 #include <utility>        // std::pair, std::index_sequence
 
-#include <range/v3/all.hpp>
+// #include <range/v3/all.hpp>
 
-using namespace ranges;
+// using namespace ranges;
 using std::forward;
 using std::make_tuple;
+using std::move;
 using std::string_view;
 using std::tuple;
+
+
+// This library relies on a large amount of parameter passing. Use these guidlines to determine how to pass the parameters.
+// https://github.com/isocpp/CppCoreGuidelines/blob/master/CppCoreGuidelines.md#fcall-parameter-passing
+// Pointers, references, and small values, always take by value, unless forwarding.
+// Unknown values, take by reference to const
+// Use before move, take by value.
+// Forwarding values, take by template parameter &&.
+
 
 
 /***********************************************************************************************************************
@@ -47,33 +57,27 @@ using std::tuple;
 //     ";");
 
 
-template <typename Func, typename Char>
-concept bool char_predicate =
-    requires (Func f, Char c)
-{
-    { std::invoke(f, c) } -> bool;
-};
-
-
-template <typename Func>
-concept bool scanner =
-    requires (Func f, string_view& s)
-{
-    { std::invoke(f, s) } -> bool;
-};
-
-
-template <typename Func, typename Result>
-concept bool matcher =
-    requires (Func f, string_view& s)
-{
-    { std::invoke(f, s) } -> std::optional<Result>;
-};
-
-
 // ---------------------------------------------------------------------------------------------------------------------
 //  Syntactic sugar
 // ---------------------------------------------------------------------------------------------------------------------
+using char_predicate = bool (*) (char);
+
+template <typename... Args>
+using basic_scanner = bool (*) (string_view, Args...);
+
+using scanner = basic_scanner<>;
+
+template <typename Result, typename... Args>
+using basic_matcher = std::optional<Result> (*) (string_view, Args...);
+
+template <typename Result>
+using matcher = basic_matcher<Result>;
+
+
+constexpr int len (char c)              { return 1; }
+constexpr int len (char_predicate p)    { return 1; }
+constexpr int len (string_view& s)      { return s.length(); }
+
 constexpr char peek (string_view& source)                       { return source.empty() ? '\0' : source.front(); }
 constexpr char peek2 (string_view& source)                      { return len(source) <= 1 ? '\0' : source[1]; }
 constexpr void advance (string_view& source, int amount = 1)    { source.remove_prefix(amount); }
@@ -81,9 +85,8 @@ constexpr void advance (string_view& source, int amount = 1)    { source.remove_
 // Warning: this is more expensive than making an extra copy of source
 constexpr void backtrack (string_view& source, int amount = 1)
 {
-    auto start = source.begin();
-    for (int i = 0;    i < amount;    ++i, --start)
-    source = string_view(&*start, std::distance(start, source.end()));
+    auto char_ptr = &*(source.begin() - amount);
+    source = string_view(char_ptr, std::distance(char_ptr, source.end()));
 }
 
 
@@ -99,11 +102,6 @@ constexpr string_view skipped (string_view source, string_view copy)
 }
 
 
-constexpr int len (char c)              { return 1; }
-constexpr int len (char_predicate p)    { return 1; }
-constexpr int len (string_view& source) { return source.length(); }
-
-
 // ---------------------------------------------------------------------------------------------------------------------
 // Scanning algorithms
 // ---------------------------------------------------------------------------------------------------------------------
@@ -115,10 +113,6 @@ constexpr int len (string_view& source) { return source.length(); }
 // --------------------------------------------------
 // Predicates
 // --------------------------------------------------
-constexpr bool is_whitespace (char c)       { return c == ' ' || c == '\t'; }
-constexpr bool is_comma (char c)            { return c == ','; }
-
-
 constexpr bool starts_with (string_view source, char c)              { return peek(source) == c; }
 constexpr bool starts_with (string_view source, char_predicate p)    { return p(peek(source)); }
 
@@ -140,29 +134,30 @@ constexpr bool starts_with (string_view source, string_view literal)
 // Scan beginning
 // --------------------------------------------------
 template <typename T>
-constexpr bool scan_with (string_view& source, T t)
+constexpr bool scan_with (string_view& source, T&& t)
 {
-    if (!starts_with(source, t))    return false;
-    advance(source, len(t));
+    int length = len(forward<T>(t));
+    if (!starts_with(source, forward<T>(t)))    return false;
+    advance(source, length);
     return true;
 }
 
 
-template <typename Pred, typename... Args>
-constexpr bool scan_with (string_view& source, const Pred& p, Args&&... args)
+template <typename... Args>
+constexpr bool scan_with (string_view& source, basic_scanner<Args...> s, Args&&... args)
 {
     string_view copy = source;
-    if (!p(copy, forward<Args>(args)...))    return false;
+    if (!s(copy, forward<Args>(args)...))    return false;
 
     source = copy;
     return true;
 }
 
 
-template <typename Pred, typename... Args>
+template <typename String_View, typename Pred, typename... Args>
 constexpr bool advance_if (string_view& source, Pred&& p, Args&&... args)
 {
-    return scan_with(source, forward<Pred>(p), forward<Args>(args)...);
+    return scan_with(forward<string_view>(source), forward<Pred>(p), forward<Args>(args)...);
 }
 
 
@@ -178,10 +173,10 @@ constexpr bool scan_optional (string_view& source, Pred&& p, Args&&... args)
 // Extended scans
 // --------------------------------------------------
 template <typename Pred, typename... Args>
-constexpr bool scan_while (string_view& source, const Pred& p, const Args&... args)
+constexpr bool scan_while (string_view& source, Pred p, const Args&... args)
 {
     if (!scan_with(source, p, args...))    return false;
-    while (scan_with(source, p, args...));
+    while (scan_with(source, p, move(args)...));
     return true;
 }
 
@@ -189,7 +184,8 @@ constexpr bool scan_while (string_view& source, const Pred& p, const Args&... ar
 template <typename T>
 constexpr bool scan_while_not (string_view& source, T t)
 {
-    while (starts_with(source, t))    advance(source, len(t));
+    int length = len(t);
+    while (starts_with(source, t))    advance(source, length);
     return !source.empty();
 }
 
@@ -208,10 +204,11 @@ constexpr bool scan_while_not (string_view& source, string_view literal)
 
 
 template <typename T>
-constexpr bool scan_until (string_view& source, T t)
+constexpr bool scan_until (string_view& source, T&& t)
 {
-    if (!scan_while_not(source, t))    return false;
-    advance(source, len(t));
+    int length = len(forward<T>(t));
+    if (!scan_while_not(source, forward<T>(t)))    return false;
+    advance(source, length);
     return true;
 }
 
@@ -219,8 +216,8 @@ constexpr bool scan_until (string_view& source, T t)
 // --------------------------------------------------
 // Scan combiners
 // --------------------------------------------------
-template <typename... Scanner>
-constexpr bool scan_join (string_view& source, Scanner... s)
+template <typename... Scanners>
+constexpr bool scan_join (string_view& source, const Scanners&... s)
 {
     return (... && s(source));
 }
@@ -235,22 +232,22 @@ constexpr bool scan_join (string_view& source, Scanner... s)
 // Match beginning
 // --------------------------------------------------
 template <typename T>
-constexpr std::optional<string_view> match_with (string_view& source, T&& t)
+constexpr std::optional<string_view> match_with (string_view& source, T t)
 {
     string_view copy = source;
     int length = len(t);
 
-    if (!scan_with(source, std::move(t))    return {};
+    if (!scan_with(source, move(t)))    return {};
 
     return copy.substr(0, length);
 }
 
 
-template <typename Pred, typename... Args>
-constexpr std::optional<string_view> match_with (string_view& source, const Pred& p, Args&&... args)
+template <typename... Args>
+constexpr std::optional<string_view> match_with (string_view& source, basic_scanner<Args...> s, Args&&... args)
 {
     string_view copy = source;
-    if (!p(source, forward<Args>(args)...))    return {};
+    if (!s(source, forward<Args>(args)...))    return {};
 
     return skipped(copy, source);
 }
@@ -269,7 +266,7 @@ constexpr std::optional<string_view> match_while (string_view& source, T&& t)
 template <typename Pred, typename... Args>
 constexpr std::optional<string_view> match_while (string_view& source, Pred&& p, Args&&... args)
 {
-    return match_with(source, scan_while, forward<Pred>(p), forward<Args>(args));
+    return match_with(source, scan_while, forward<Pred>(p), forward<Args>(args)...);
 }
 
 
@@ -283,7 +280,7 @@ constexpr std::optional<string_view> match_while_not (string_view& source, T&& t
 template <typename Pred, typename... Args>
 constexpr std::optional<string_view> match_while_not (string_view& source, Pred&& p, Args&&... args)
 {
-    return match_with(source, scan_while_not, forward<Pred>(p), forward<Args>(args));
+    return match_with(source, scan_while_not, forward<Pred>(p), forward<Args>(args)...);
 }
 
 
@@ -297,163 +294,91 @@ constexpr std::optional<string_view> match_until (string_view& source, T&& t)
 template <typename Pred, typename... Args>
 constexpr std::optional<string_view> match_until (string_view& source, Pred&& p, Args&&... args)
 {
-    return match_with(source, scan_until, forward<Pred>(p), forward<Args>(args));
+    return match_with(source, scan_until, forward<Pred>(p), forward<Args>(args)...);
 }
 
 
 // --------------------------------------------------
 // Match combiners
 // --------------------------------------------------
-template <typename... Scanner>
-constexpr std::optional<string_view> match_join (string_view& source, Scanner&&... s)
+template <typename... Scanners>
+constexpr std::optional<string_view> match_join (string_view& source, Scanners&&... s)
 {
-    return match_with(source, scan_join, forward<Scanner>(s)...);
+    return match_with(source, scan_join, forward<Scanners>(s)...);
 }
 
 
+template <typename Pred, typename... Args>
+constexpr std::optional<string_view>
+match_scan_ws_before (string_view& source,
+                      Pred&& p, Args&&... args,
+                      char_predicate is_whitespace = [] (char c) constexpr -> bool { return c == ' ' || c == '\r'; })
+{
+    if (!(scan_while(source, is_whitespace)))    return {};
+    return match_with(source, forward<Pred>(p), forward<Args>(args)...);
+}
 
 
-// Implement
+template <typename Pred, typename... Args>
+constexpr std::optional<string_view>
+match_scan_delim_before (string_view& source,
+                         Pred&& p, Args&&... args,
+                         char_predicate is_delimiter = [] (char c) constexpr -> bool { return c == ';'; },
+                         char_predicate is_whitespace = [] (char c) constexpr -> bool { return c == ' ' || c == '\r'; })
+{
+    scan_while(source, is_whitespace);
+    if (!( scan_with(source, is_delimiter) && scan_while(source, is_whitespace) ))
+        return {};
 
-// Default seq function treats spaces and tab as whitespace
-// struct sequencer
-// {
-//     char_predicate is_whitespace = default_is_whitespace;
-
-//     scanner operator (scanner&& first, scanner&&... rest)
-//     {
-//         return operator()(std::forward<scanner>(first), std::forward<scanner>(rest)...,
-//                             is_whitespace);
-//     }
-
-//     scanner operator (scanner first, scanner..., rest, char_predicate is_whitespace)
-//     {
-//         return [=] (string_view& source) -> bool
-//         {
-//             return scan_sequence(first, rest..., is_whitespace);
-//         };
-//     }
-// } seq;
+    return match_with(source, forward<Pred>(p), forward<Args>(args)...);
+}
 
 
-// // Default delim function adds <optional whitespace, comma, whitespace> as a delimiter
-// struct delimited_sequencer
-// {
-//     const char_predicate is_whitespace = default_is_whitespace;
-//     const char_predicate is_delimiter  = is_comma;
-
-//     scanner operator (scanner&& first, scanner&&... rest)
-//     {
-//         return operator()(std::forward<scanner>(first), std::forward<scanner>(rest)...,
-//                             is_delimiter, is_whitespace);
-//     }
-    
-//     scanner operator (scanner&& first, scanner&&... rest, char_predicate is_delimiter)
-//     {
-//         return operator()(std::forward<scanner>(first), std::forward<scanner>(rest)...,
-//                             is_delimiter, is_whitespace);
-//     }
-
-//     scanner operator (scanner first, scanner... rest
-//                         char_predicate is_delimiter,
-//                         char_predicate is_whitespace)
-//     {
-//         return [=] (string_view& source) -> bool
-//         {
-//             return scan_delimiter(first, rest..., is_delimiter, is_whitespace);
-//         };
-//     }
-// } delim;
+// Only return a tuple if all generator arguments are executed successfully
+template <typename Result, typename Pred>
+constexpr tuple<Result> generate_tuple_while (Pred p)
+{
+    return p().value_or(tuple<>{});
+}
 
 
-// template <typename... Scanner>
-// constexpr bool scan_sequence (string_view& source,
-//                               scanner first, Scanner... rest,
-//                               char_predicate is_whitespace = default_is_whitespace)
-// {
-//     return (first(source) && ...
-//             && scan_while(source, is_whitespace)
-//             && rest(source));
-// }
+template <typename Result, typename Pred, typename... Preds>
+constexpr tuple<Result> generate_tuple_while (Pred first, Preds... rest)
+{
+    auto a = first();
+    if (!a)    return tuple<>{};
+
+    return std::tuple_cat(*a, generate_tuple_while(rest...));
+}
 
 
+template <typename Result, typename... Args, typename... Scanners>
+constexpr std::optional<Result>
+match_sequence (string_view& source,
+                basic_scanner<Args...> first, Scanners&&... rest,
+                char_predicate is_whitespace = [] (char c) constexpr -> bool { return c == ' ' || c == '\r'; })
+{
+    auto result = generate_tuple_while(first(source),
+                                       match_scan_ws_before(source, forward<Scanners>(rest), is_whitespace)...);
 
-// // I think these tuple generators are broken or suboptimal
-
-
-// // Only return a tuple if all generator arguments are executed successfully
-// template <typename Result, typename Func>
-// constexpr std::optional<Result>
-// generate_tuple_while (Func f)
-// {
-//     return f();
-// }
-
-
-// template <typename Result, typename Func, typename... Func>
-// constexpr std::optional<Result>
-// generate_tuple_while (Func first, Funcs... rest)
-// {
-//     auto a = first();
-//     if (!a)    return {};
-
-//     return std::tuple_cat(*a, generate_tuple_while(rest...).value_or(tuple<>{}));
-// }
+    if (std::tuple_size<decltype(result)>(result) != sizeof...(rest) + 1)    return {};
+    return result;
+}
 
 
-// template <scanner... S, typename Result>
-// constexpr std::optional<Result>
-// match_sequence (string_view& source,
-//                 scanner first, S... rest,
-//                 char_predicate is_whitespace = default_is_whitespace)
-// {
-//     auto insert_whitespace_before =
-//         [=, p = std::move(is_whitespace)] (string_view& source, scanner s) -> std::optional<string_view>
-//         {
-//             if (!(scan_while(source, is_whitespace)))    return {};
-//             return match_with(source, s);
-//         }
+template <typename... Scanners, typename... Args, typename Result>
+constexpr std::optional<Result>
+match_delimiter (string_view& source,
+                 basic_scanner<Args...> first, Scanners&&... rest,
+                 char_predicate is_delimiter = [] (char c) constexpr -> bool { return c == ';'; },
+                 char_predicate is_whitespace = [] (char c) constexpr -> bool { return c == ' ' || c == '\r'; })
+{
+    auto result = generate_tuple_while(first(source),
+                                       match_scan_delim_before(source, forward<Scanners>(rest), is_delimiter, is_whitespace)...);
 
-//     auto result = generate_tuple_while(first(source), insert_whitespace_before(source, rest)...);
-//     int size = std::tuple_size<result>;
-
-//     if (size != sizeof... (rest) + 1)    return {};
-//     return result;
-// }
-
-
-// template <scanner... S>
-// constexpr std::optional<Result>
-// match_delimiter (string_view& source,
-//                  scanner first, S... rest,
-//                  char_predicate is_delimiter = is_comma,
-//                  char_predicate is_whitespace = default_is_whitespace)
-// {
-//     auto insert_delimiter_before =
-//         [=, d = std::move(is_delimiter)] (string_view& source, scanner s) -> std::optional<string_view>
-//         {
-//             scan_while(source, is_whitespace);
-//             if (!( scan_with(source, d) && scan_while(source, is_whitespace) )
-//                 return {};
-
-//             return match_with(source, s);
-//         }
-
-//     auto result = generate_tuple_while(first(source), insert_delimiter_before(source, rest)...);
-//     int size = std::tuple_size<result>;
-
-//     if (size != sizeof... (rest) + 1)    return {};
-//     return result;
-// }
-
-
-
-
-
-
-
-
-
+    if (std::tuple_size<decltype(result)>(result) != sizeof... (rest) + 1)    return {};
+    return result;
+}
 
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -474,9 +399,9 @@ namespace Scan {
 template <typename CharT>
 scanner lit (CharT literal)
 {
-    return [l = std::move(literal)] (string_view& source) -> bool
+    return [l = move(literal)] (string_view& source) -> bool
     {
-        return scan_with(source, std::move(l));
+        return scan_with(source, move(l));
     };
 }
 
@@ -484,29 +409,29 @@ scanner lit (CharT literal)
 template <typename T>
 scanner with (T t)
 {
-    return [_t = std::move(t)] (string_view& source) -> bool
+    return [t = move(t)] (string_view& source) -> bool
     {
-        return scan_with(source, std::move(_t));
-    }
+        return scan_with(source, move(t));
+    };
 }
 
 
 template <typename Pred, typename... Args>
 scanner with (string_view& source, Pred p, Args... args)
 {
-    return [_p = std::move(p), _args = std::move(args)...] (string_view& source) -> bool
+    return [p = movep(p), ... args = move(args)] (string_view& source) -> bool
     {
-        return scan_with(source, std::move(_p), std::move(_args)...);
+        return scan_with(source, move(p), move(args)...);
     };
 }
 
 
-tempalte <typename Pred, typename... Args>
+template <typename Pred, typename... Args>
 scanner optional (Pred p, Args... args)
 {
-    return [_p = std::move(p), _args = std::move(args)...] (string_view& source) -> bool
+    return [p = move(p), ... args = move(args)] (string_view& source) -> bool
     {
-        return scan_optional(source, std::move(_p), std::move(_args)...);
+        return scan_optional(source, move(p), move(args)...);
     };
 }
 
@@ -514,9 +439,9 @@ scanner optional (Pred p, Args... args)
 template <typename Pred, typename... Args>
 scanner scan_while (Pred p, Args... args)
 {
-    return [_p = std::move(p), _args = std::move(args)...] (string_view& source) -> bool
+    return [p = move(p), ... args = move(args)] (string_view& source) -> bool
     {
-        return scan_while(source, std::move(_p), std::move(_args)...);
+        return scan_while(source, move(p), move(args)...);
     };
 }
 
@@ -524,9 +449,9 @@ scanner scan_while (Pred p, Args... args)
 template <typename T>
 scanner stop_before (T t)
 {
-    return [_t = std::move(t)] (string_view& source) -> bool
+    return [t = move(t)] (string_view& source) -> bool
     {
-        return scan_while_not(source, std::move(_t));
+        return scan_while_not(source, move(t));
     };
 }
 
@@ -534,18 +459,19 @@ scanner stop_before (T t)
 template <typename T>
 scanner until (T t)
 {
-    return [_t = std::move(t)] (string_view& source) -> bool
+    return [t = move(t)] (string_view& source) -> bool
     {
-        return scan_until(source, std::move(_t));
+        return scan_until(source, move(t));
     };
 }
 
 
-scanner join (scanners... scanners)
+template <typename... Scanners>
+scanner join (Scanners... scanners)
 {
-    return [s = std::move(scanners)...] (string_view& source) -> bool
+    return [... s = move(scanners)] (string_view& source) -> bool
     {
-        return scan_join(source, std::move(s)...);
+        return scan_join(source, move(s)...);
     };
 }
 
@@ -556,81 +482,128 @@ namespace Match {
 
 // Does the same as with(CharT), but is nice sugar when passing a string-like value
 template <typename CharT>
-matcher lit (CharT literal)
+matcher<string_view> lit (CharT literal)
 {
-    return [l = std::move(literal)] (string_view& source) -> std::optional<string_view>
+    return [l = move(literal)] (string_view& source) -> std::optional<string_view>
     {
-        return match_with(source, std::move(l));
+        return match_with(source, move(l));
     };
 }
 
 
 template <typename T>
-matcher with (T t)
+matcher<string_view> with (T t)
 {
-    return [_t = std::move(t)] (string_view& source) -> std::optional<string_view>
+    return [t = move(t)] (string_view& source) -> std::optional<string_view>
     {
-        return match_with(source, std::move(_t));
+        return match_with(source, move(t));
+    };
+}
+
+
+template <typename... Args>
+matcher<string_view> with (string_view& source, basic_scanner<Args...> s, Args... args)
+{
+    return [s = move(s), ... args = move(args)] (string_view& source) -> std::optional<string_view>
+    {
+        return match_with(source, move(s), move(args)...);
+    };
+}
+
+
+template <typename... Args>
+matcher<string_view> match_while (basic_scanner<Args...> s, Args... args)
+{
+    return [s = move(s), ... args = move(args)] (string_view& source) -> std::optional<string_view>
+    {
+        return match_while(source, move(s), move(args)...);
+    };
+}
+
+
+template <typename T>
+matcher<string_view> stop_before (T t)
+{
+    return [t = move(t)] (string_view& source) -> std::optional<string_view>
+    {
+        return match_while_not(source, move(t));
+    };
+}
+
+
+template <typename T>
+matcher<string_view> until (T t)
+{
+    return [t = move(t)] (string_view& source) -> std::optional<string_view>
+    {
+        return match_until(source, move(t));
+    };
+}
+
+
+template <typename... Scanners>
+matcher<string_view> join (Scanners... scanners)
+{
+    return [... s = move(scanners)] (string_view& source) -> std::optional<string_view>
+    {
+        return match_join(source, move(s)...);
+    };
+}
+
+
+// Default seq function treats spaces and tab as whitespace
+struct sequencer
+{
+    char_predicate is_whitespace = [] (char c) -> bool { return c == ' ' || c == '\r'; };
+
+    template <typename Result, typename... Scanners>
+    matcher<Result> operator() (Scanners&&... s)
+    {
+        return operator()(forward<Scanners>(s)..., is_whitespace);
     }
-}
 
-
-template <typename Pred, typename... Args>
-matcher with (string_view& source, Pred p, Args... args)
-{
-    return [_p = std::move(p), _args = std::move(args)...] (string_view& source) -> std::optional<string_view>
+    template <typename Result, typename... Scanners>
+    matcher<Result> operator() (Scanners... s, char_predicate is_whitespace)
     {
-        return match_with(source, std::move(_p), std::move(_args)...);
-    };
-}
+        return [... s = move(s), p = move(is_whitespace)] (string_view& source) -> std::optional<Result>
+        {
+            return match_sequence(source, move(s)..., move(p));
+        };
+    }
+} seq;
 
 
-template <typename Pred, typename... Args>
-matcher match_while (Pred p, Args... args)
+// Default delim function adds <optional whitespace, comma, whitespace> as a delimiter
+struct delimited_sequencer
 {
-    return [_p = std::move(p), _args = std::move(args)...] (string_view& source) -> std::optional<string_view>
+    char_predicate is_whitespace = [] (char c) -> bool { return c == ' ' || c == '\r'; };
+    char_predicate is_delimiter  = [] (char c) -> bool { return c == ';'; };
+
+    template <typename Result, typename... Scanners>
+    matcher<Result> operator() (Scanners&&... s)
     {
-        return match_while(source, std::move(_p), std::move(_args)...);
-    };
-}
-
-
-template <typename T>
-matcher stop_before (T t)
-{
-    return [_t = std::move(t)] (string_view& source) -> std::optional<string_view>
+        return operator() (forward<Scanners>(s)..., is_delimiter, is_whitespace);
+    }
+    
+    template <typename Result, typename... Scanners>
+    matcher<Result> operator() (Scanners&&... s, char_predicate&& is_delimiter)
     {
-        return match_while_not(source, std::move(_t));
-    };
-}
+        return operator() (forward<Scanners>(s)..., forward<char_predicate>(is_delimiter), is_whitespace);
+    }
 
-
-template <typename T>
-matcher until (T t)
-{
-    return [_t = std::move(t)] (string_view& source) -> std::optional<string_view>
+    template <typename Result, typename... Scanners>
+    matcher<Result> operator() (Scanners... s, char_predicate is_delimiter, char_predicate is_whitespace)
     {
-        return match_until(source, std::move(_t));
-    };
-}
-
-
-matcher join (scanners... scanners)
-{
-    return [s = std::move(scanners)...] (string_view& source) -> std::optional<string_view>
-    {
-        return match_join(source, std::move(s)...);
-    };
-}
+        return [... s = move(s), p1 = move(is_delimiter), p2 = move(is_whitespace)]
+               (string_view& source) -> std::optional<Result>
+        {
+            return match_delimited_sequence(source, move(s)..., move(p1), move(p2));
+        };
+    }
+} delim;
 
 
 } // namespace Match
-
-
-
-
-
-
 
 
 

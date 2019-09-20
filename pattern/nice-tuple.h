@@ -1,10 +1,11 @@
-3ifndef NICE_TUPLE_H
+#ifndef NICE_TUPLE_H
 #define NICE_TUPLE_H
 
 #include <tuple>
+#include <type_traits>    // std::enable_if
+using std::enable_if_t;
+using std::size_t;
 using std::tuple;
-using size_t = unsigned long;    // G++9 definition
-
 
 // ---------------------------------------------------------------------------------------------------------------------
 // Nice index access
@@ -56,46 +57,60 @@ auto operator"" _i ()
 
 
 // ---------------------------------------------------------------------------------------------------------------------
-// Generate While
+// Make Tuple While
 // ---------------------------------------------------------------------------------------------------------------------
-// Generate a tuple, stop and return partial result when a flag is set to false
-
-// (Not yet implemented)
-
+// Construct a tuple from arguments, stop and return partial result when a flag is set to false
 // Adapted from GCC 9.1.0
 namespace NiceTupleDetail {
 
-
-template<size_t, typename, typename, size_t>
-struct make_tuple_impl;
-
-
-template<size_t Idx, typename Tuple, typename... Tp, size_t Nm>
-struct make_tuple_impl<Idx, tuple<Tp...>, Tuple, Nm>
-    : make_tuple_impl<Idx + 1,
-                      tuple<Tp..., tuple_element_t<Idx, Tuple>>,
-                      Tuple, Nm>
-{};
+template <bool, size_t, typename, typename, size_t>
+struct make_tuple_while_impl;
 
 
-template<size_t Nm, typename Tuple, typename... Tp>
-struct make_tuple_impl<Nm, tuple<Tp...>, Tuple, Nm>
+// Stop when index == size
+template <bool Continue, size_t N, typename Orig, typename... Elems>
+struct make_tuple_while_impl<Continue, N, tuple<Elems...>, Orig, N>
 {
-    using type = tuple<Tp...>;
+    using type = tuple<Elems...>;
 };
 
 
-template<typename Tuple>
-struct do_make_tuple
-    : make_tuple_impl<0, tuple<>, Tuple, std::tuple_size<Tuple>::value>
+// Stop when Continue is false
+template <size_t I, typename Orig, typename... Elems, size_t N>
+struct make_tuple_while_impl<false, I, tuple<Elems...>, Orig, N>
+{
+    using type = tuple<Elems...>;
+};
+
+
+template <size_t I, typename Orig, typename... Elems, size_t N, bool Continue>
+struct make_tuple_while_impl<Continue, I, tuple<Elems...>, Orig, N>
+    : make_tuple_while_impl<Continue, I + 1,
+                            tuple<Elems..., tuple_element_t<I, Orig>>,
+                            Orig, N>
+{};
+
+
+template <bool Continue, typename TupleLike>
+struct do_make_tuple_while
+    : make_tuple_while<Continue, 0, tuple<>, TupleLike, std::tuple_size<TupleLike>::value>
 {};
 
 
 // Returns the std::tuple equivalent of a tuple-like type.
-template<typename Tuple>
-struct make_tuple
-    : public do_make_tuple<remove_cvref_t<Tuple>>
+template <bool Continue, typename TupleLike>
+struct make_tuple_while
+    : public do_make_tuple_while<Continue, remove_cvref_t<TupleLike>>
 {};
+
+// Example expansion
+// auto three_out_of_five = make_tuple_while(false_on_third(), 1, 2, 3, 4, 5);
+// do_make_tuple three_out_of_five = do_make_tuple : make_tuple_impl<true, 0, tuple<>, {1, 2, 3, 4, 5}, 5>
+//                                                 : make_tuple_impl<true, 1, tuple<1>, {1, 2, 3, 4, 5}, 5>
+//                                                 : make_tuple_impl<true, 2, tuple<1, 2>, {1, 2, 3, 4, 5}, 5>
+//                                                 : make_tuple_impl<false, 3, tuple<1, 2, 3>, {1, 2, 3, 4, 5}, 5>
+// three_out_of_five::type == tuple<1, 2, 3>
+
 
 
 
@@ -187,7 +202,7 @@ struct tuple_concater<Ret, std::_Index_tuple<>>
 } // namespace NiceTupleDetail
 
 
-template <typename... Tuples, typename = typename enable_if<__and_<__is_tuple_like<Tuples>...>::value>::type>
+template <typename... Tuples, typename = typename std::enable_if<__and_<__is_tuple_like<Tuples>...>::value>::type>
 constexpr auto tuple_cat (Tuples&&... ts)
     -> typename NiceTupleDetail::tuple_cat_result<Tuples...>::type
 {
@@ -199,4 +214,4 @@ constexpr auto tuple_cat (Tuples&&... ts)
 }
 
 
-#undef // NICE_TUPLE_H
+#endif // NICE_TUPLE_H

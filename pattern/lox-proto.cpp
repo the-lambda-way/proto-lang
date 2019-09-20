@@ -11,6 +11,7 @@
 #include <fstream>    // get_file_contents
 #include <iostream>
 #include <map>
+#include <memory>     // unique_ptr
 #include <string>
 #include <vector>
 
@@ -110,6 +111,51 @@ namespace TokenTypeMembers
 }
 
 
+std::string to_string (TokenType type) {
+    const std::string strings[] = {
+        "LEFT_PAREN", "RIGHT_PAREN", "LEFT_BRACE", "RIGHT_BRACE",
+        "COMMA", "DOT", "MINUS", "PLUS", "SEMICOLON", "SLASH", "STAR",
+        "BANG", "BANG_EQUAL",
+        "EQUAL", "EQUAL_EQUAL",
+        "GREATER", "GREATER_EQUAL",
+        "LESS", "LESS_EQUAL",
+        "IDENTIFIER", "STRING", "NUMBER",
+        "AND", "CLASS", "ELSE", "FALSE", "FUN", "FOR", "IF", "NIL", "OR",
+        "PRINT", "RETURN", "SUPER", "THIS", "TRUE", "VAR", "WHILE",
+        "END"
+    };
+
+    return strings[static_cast<int>(type)];
+}
+
+std::string to_string (std::string val)    { return val; }
+std::string to_string (std::nullptr_t)     { return "nullptr"; }
+
+
+struct TokenBase {
+    virtual std::string to_string () = 0;
+};
+
+
+template <typename ValueType>
+struct Token : TokenBase {
+    Token (TokenType type, std::string lexeme, ValueType literal, int line)
+        : type(type), lexeme(lexeme), literal(literal), line(line)
+    {}
+
+    std::string to_string () override {
+        return ::to_string(type) + " " + lexeme + " " + ::to_string(literal);
+    }
+
+private:
+    const TokenType   type;
+    const std::string lexeme;
+    const ValueType   literal;
+    const int         line;
+};
+
+
+
 class Scanner
 {
 public:
@@ -135,7 +181,7 @@ private:
     inline bool advance_if (scanner&& s)    { return ::advance_if(view, std::forward<scanner>(s)); }
 
     // Recognizers
-    bool match (char expected)    { return scan_literal(view, expected); }
+    bool match (char expected)    { return scan_with(view, expected); }
 
     // Tokenizers
     bool identifier ();

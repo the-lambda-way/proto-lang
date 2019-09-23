@@ -1,1 +1,6 @@
 build/
+pattern/adt.h
+pattern/nice-tuple.h
+pattern/nice-variant.cpp
+pattern/parsing-test.cpp
+pattern/test.cpp

@@ -6,10 +6,10 @@
 #ifndef LOXTEST
 #define LOXTEST
 
-#include <fstream>    // get_file_contents
-#include <iostream>
-#include <map>        // scanner keywords
-#include <memory>     // unique_ptr
+#include <fstream>     // get_file_contents
+#include <iostream>    // getline
+#include <map>         // scanner keywords
+#include <memory>      // unique_ptr
 #include <string>
 #include <vector>
 
@@ -164,7 +164,7 @@ public:
 
 
 private:
-    const std::string       source;
+    const std::string source;
     std::vector<std::unique_ptr<TokenBase>> tokens;
 
     int start   = 0;
@@ -173,18 +173,23 @@ private:
 
     const std::map<std::string, TokenType> keywords;
 
-    void scan_token ();
-    void identifier ();
-    void number ();
-    void string ();
-    bool match (char expected);
-    char peek ();
-    char peek_next ();
+    // Tokenization
     bool is_alpha (char c);
     bool is_alpha_numeric (char c);
     bool is_digit (char c);
-    bool is_at_end ();
+    void identifier ();
+    void number ();
+    void string ();
+
+    // Traversal
+    char peek ();
+    char peek_next ();
     char advance ();
+    bool is_at_end ();
+    bool match (char expected);
+
+    // Execute
+    void scan_token ();
     void add_token (TokenType type);
 
     template <typename ValueType>
@@ -472,7 +477,7 @@ int main (int argc, char* argv[]) {
 
     try {
              if (argc >  2)    cout << "Usage: lox [script]";
-        else if (argc == 2)    run_file(argv[0]);
+        else if (argc == 2)    run_file(argv[1]);
         else                   run_prompt();
     }
     catch (exception& e) {

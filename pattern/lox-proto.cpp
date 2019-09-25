@@ -38,7 +38,7 @@ using namespace Scan;
 
 scanner alpha      = when(is_alpha);
 scanner alpha_nums = while_it(is_alpha_numeric);
-scanner identifier = join(alpha, alpha_nums);
+scanner identifier = join(alpha, optional(alpha_nums));
 scanner digits     = while_it(is_digit);
 scanner number     = join(digits, optional(join(lit('.'), digits)));
 scanner string     = join(lit('"'), until('"'));
@@ -216,11 +216,12 @@ private:
     string_view view;
     int line = 1;
 
-    char peek ()                  { return ::peek(view); }
-    char peek_next ()             { return ::peek2(view); }
-    void advance ()               { ::advance(view); }
-    bool is_at_end ()             { return view.empty(); }
-    bool match (char expected)    { return scan_when(view, expected); }
+    char peek ()                         { return ::peek(view); }
+    char peek_next ()                    { return ::peek2(view); }
+    void advance ()                      { ::advance(view); }
+    bool is_at_end ()                    { return view.empty(); }
+    bool match (char expected)           { return scan_when(view, expected); }
+    bool match (std::string expected)    { return scan_when(view, expected); }
 
     // Tokenizers
     std::vector<std::unique_ptr<TokenBase>> tokens;
@@ -297,10 +298,8 @@ void Scanner::scan_token ()
         case '>' : peek_next() == '=' ? add_token(GREATER_EQUAL, ">=") : add_token(GREATER, ">"); break;
 
         case '/':
-            if (peek_next() == '/')
-                scan_while_not(view, '\n');
-            else
-                add_token(SLASH, "/");
+            if   (peek_next() != '/')    add_token(SLASH, "/");
+            else                         found_simple = false;    // is a comment
             break;
 
         case ' ':
@@ -323,7 +322,8 @@ void Scanner::scan_token ()
              if (c == '"')       string();
         else if (is_digit(c))    number();
         else if (is_alpha(c))    identifier();
-        else                     error(line, "Unexpected character.");
+        else if (match("//"))    scan_while_not(view, '\n');    // is a comment
+        else                     error(line, "Unexpected character.\n");
     }
 }
 
@@ -406,13 +406,12 @@ void run_prompt () {
 
     std::string line;
 
-    for (;;) {
+    for ( ; !cin.eof(); ) {
         cout << "> ";
         getline(cin, line);
         run(line);
 
         had_error = false;
-        if (line == "\0")    break;
     }
 }
 

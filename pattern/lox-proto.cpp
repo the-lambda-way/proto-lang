@@ -36,13 +36,13 @@ constexpr bool is_whitespace (char c)       { return c == ' ' || c == '\r' || c 
 
 using namespace Scan;
 
-scanner alpha      = with(is_alpha);
-scanner alpha_nums = scan_while(is_alpha_numeric);
+scanner alpha      = when(is_alpha);
+scanner alpha_nums = while_it(is_alpha_numeric);
 scanner identifier = join(alpha, alpha_nums);
-scanner digits     = scan_while(is_digit);
+scanner digits     = while_it(is_digit);
 scanner number     = join(digits, optional(join(lit('.'), digits)));
 scanner string     = join(lit('"'), until('"'));
-scanner whitespace = with(is_whitespace);
+scanner whitespace = when(is_whitespace);
 
 
 enum class TokenType
@@ -220,7 +220,7 @@ private:
     char peek_next ()             { return ::peek2(view); }
     void advance ()               { ::advance(view); }
     bool is_at_end ()             { return view.empty(); }
-    bool match (char expected)    { return scan_with(view, expected); }
+    bool match (char expected)    { return scan_when(view, expected); }
 
     // Tokenizers
     std::vector<std::unique_ptr<TokenBase>> tokens;
@@ -248,7 +248,7 @@ Scanner::Scanner (std::string source) :
 
 void Scanner::identifier ()
 {
-    string_view match = match_with(view, LoxLang::identifier).value();
+    string_view match = match_when(view, LoxLang::identifier).value();
 
     auto kw_match = keywords.find(to_string(match));
     if (kw_match == keywords.end())    add_token(TokenType::IDENTIFIER, match, match);
@@ -258,7 +258,7 @@ void Scanner::identifier ()
 
 void Scanner::string ()
 {
-    string_view match = match_with(view, LoxLang::string).value();
+    string_view match = match_when(view, LoxLang::string).value();
                                    
     add_token(TokenType::STRING, "", match.substr(1, match.length() - 2));
 }
@@ -266,7 +266,7 @@ void Scanner::string ()
 
 void Scanner::number ()
 {
-    string_view match = match_with(view, LoxLang::number).value();
+    string_view match = match_when(view, LoxLang::number).value();
 
     add_token(TokenType::NUMBER, match, std::stod(to_string(match)));
 }
@@ -412,6 +412,7 @@ void run_prompt () {
         run(line);
 
         had_error = false;
+        if (line == "\0")    break;
     }
 }
 

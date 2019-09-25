@@ -168,7 +168,7 @@ constexpr bool starts_with (string_view source, string_view literal)
 
 
 template <typename T>
-constexpr bool scan_with (string_view& source, T t)
+constexpr bool scan_when (string_view& source, T t)
 {
     if (!starts_with(source, t))    return false;
     advance(source, len(t));
@@ -179,7 +179,7 @@ constexpr bool scan_with (string_view& source, T t)
 template <typename T>
 constexpr bool scan_optional (string_view& source, T&& t)
 {
-    scan_with(source, forward<T>(t));
+    scan_when(source, forward<T>(t));
     return true;
 }
 
@@ -195,8 +195,8 @@ constexpr bool scan_optional (string_view& source, const scanner& s, Args... arg
 template <typename T>
 constexpr bool scan_while (string_view& source, T t)
 {
-    if (!scan_with(source, t))    return false;
-    while (scan_with(source, t));
+    if (!scan_when(source, t))    return false;
+    while (scan_when(source, t));
     return true;
 }
 
@@ -204,7 +204,7 @@ constexpr bool scan_while (string_view& source, T t)
 template <typename T>
 constexpr bool scan_while_not (string_view& source, T t)
 {
-    while (!starts_with(source, t))    advance(source);
+    while (!starts_with(source, t) && !source.empty())    advance(source);
     return !source.empty();
 }
 
@@ -249,32 +249,88 @@ constexpr bool scan_any (string_view& source, const Scanners&... s)
     return (... || s(source));
 }
 
+template <typename Arg>
+auto make_simple_scanner (scanner s, Arg arg)
+{
+    return [s = move(s), arg = move(arg)] (string_view& source) -> bool
+    {
+        return s(source, arg);
+    };
+}
+
+
+template <typename... Args>
+auto make_simple_scanner (scanner s, Args... args)
+{
+    return [s = move(s), ...args = move(args)] (string_view& source) -> bool
+    {
+        return s(source, args...);
+    };
+}
 
 // ---------------------------------------------------------------------------------------------------------------------
 // Scanning
 // ---------------------------------------------------------------------------------------------------------------------
 namespace Scan {
-   
-// Does the same as with(literal), but is nice sugar when passing a string-like value
+
+// // Does the same as with(literal), but is nice sugar when passing a string-like value
+// template <typename CharT>
+// auto lit (CharT literal)
+// { return make_simple_scanner(scan_when, move(literal)); }
+
+
+// template <typename T>
+// auto when (T t)
+// { return make_simple_scanner(scan_when, move(t)); }
+
+
+// template <typename T>
+// auto optional (T t)
+// { return make_simple_scanner(scan_optional, move(t)); }
+
+
+// template <typename T>
+// auto while_it (T t)
+// { return make_simple_scanner(PatLib::scan_while, move(t)); }
+
+
+// template <typename T>
+// auto stop_before (T t)
+// { return make_simple_scanner(scan_while_not, move(t)); }
+
+
+// template <typename T>
+// auto until (T t)
+// { return make_simple_scanner(scan_until, move(t)); }
+
+
+// template <typename... Scanners>
+// auto join (const Scanners&... scanners)
+// { return make_simple_scanner(scan_join, move(scanners)...); }
+
+
+// template <typename... Scanners>
+// auto any (const Scanners&... scanners)
+// { return make_simple_scanner(scan_any, move(scanners)...); }
+
 template <typename CharT>
 auto lit (CharT literal)
 {
-    return [l = move(literal)] (string_view& source) -> bool
+    return [literal = move(literal)] (string_view& source) -> bool
     {
-        return scan_with(source, l);
+        return scan_when(source, literal);
     };
 }
 
 
 template <typename T>
-auto with (T t)
+auto when (T t)
 {
     return [t = move(t)] (string_view& source) -> bool
     {
-        return scan_with(source, t);
+        return scan_when(source, t);
     };
 }
-
 
 template <typename T>
 auto optional (T t)
@@ -285,16 +341,14 @@ auto optional (T t)
     };
 }
 
-
 template <typename T>
-auto scan_while (T t)
+auto while_it (T t)
 {
     return [t = move(t)] (string_view& source) -> bool
     {
-        return PatLib::scan_while(source, t);
+        return scan_while(source, t);
     };
 }
-
 
 template <typename T>
 auto stop_before (T t)
@@ -305,7 +359,6 @@ auto stop_before (T t)
     };
 }
 
-
 template <typename T>
 auto until (T t)
 {
@@ -315,26 +368,23 @@ auto until (T t)
     };
 }
 
-
 template <typename... Scanners>
 auto join (const Scanners&... scanners)
 {
-    return [... s = move(scanners)] (string_view& source) -> bool
+    return [...scanners = move(scanners)] (string_view& source) -> bool
     {
-        return scan_join(source, s...);
+        return scan_join(source, scanners...);
     };
 }
-
 
 template <typename... Scanners>
 auto any (const Scanners&... scanners)
 {
-    return [... s = move(scanners)] (string_view& source) -> bool
+    return [...scanners = move(scanners)] (string_view& source) -> bool
     {
-        return scan_any(source, s...);
+        return scan_any(source, scanners...);
     };
 }
-
 } // namespace Scan
 
 
@@ -343,23 +393,19 @@ auto any (const Scanners&... scanners)
 // ---------------------------------------------------------------------------------------------------------------------
 // A match returns a std::optional containing a view of matched characters when a scan is successful
 
-// --------------------------------------------------
-// Match beginning
-// --------------------------------------------------
 template <typename T>
-constexpr std::optional<string_view> match_with (string_view& source, T t)
+constexpr std::optional<string_view> match_when (string_view& source, T t)
 {
     string_view copy = source.substr(0, len(t));
 
-    // Reminder: scan_with only updates source on a successful match
-    if (!scan_with(source, move(t)))    return {};
+    if (!scan_when(source, move(t)))    return {};
 
     return copy;
 }
 
 
 template <typename... Args>
-constexpr std::optional<string_view> match_with (string_view& source, const scanner& s, Args&&... args)
+constexpr std::optional<string_view> match_when (string_view& source, const scanner& s, Args&&... args)
 {
     string_view copy = source;
 
@@ -369,38 +415,40 @@ constexpr std::optional<string_view> match_with (string_view& source, const scan
 }
 
 
-// --------------------------------------------------
-// Extended matching
-// --------------------------------------------------
+template <typename T>
+constexpr std::optional<string_view> match_optional (string_view& source, T&& t)
+{ 
+    auto match = match_when(source, forward<T>(t));
+    return match.value_or(string_view(""));
+}
+
+
+template <scanner S, typename... Args>
+constexpr std::optional<string_view> match_optional (string_view& source, const S& s, Args&&... args)
+{
+    auto match = match_when(source, forward<S>(s), forward<Args>(args)...);
+    return match.value_or(string_view(""));
+}
+
+
 template <typename T>
 constexpr std::optional<string_view> match_while (string_view& source, T&& t)
-{
-    return match_with(source, scan_while, forward<T>(t));
-}
+{ return match_when(source, scan_while, forward<T>(t)); }
 
 
 template <typename T>
 constexpr std::optional<string_view> match_while_not (string_view& source, T&& t)
-{
-    return match_with(source, scan_while_not, forward<T>(t));
-}
+{ return match_when(source, scan_while_not, forward<T>(t)); }
 
 
 template <typename T>
 constexpr std::optional<string_view> match_until (string_view& source, T&& t)
-{
-    return match_with(source, scan_until, forward<T>(t));
-}
+{ return match_when(source, scan_until, forward<T>(t)); }
 
 
-// --------------------------------------------------
-// Match combiners
-// --------------------------------------------------
 template <typename... Scanners>
 constexpr std::optional<string_view> match_join (string_view& source, const Scanners&&... s)
-{
-    return match_with(source, scan_join, forward<Scanners>(s)...);
-}
+{ return match_when(source, scan_join, forward<Scanners>(s)...); }
 
 
 template <typename Pred, typename... Args>
@@ -410,7 +458,7 @@ match_scan_ws_before (string_view& source,
                       const char_predicate& is_whitespace = [] (char c) constexpr -> bool { return c == ' ' || c == '\r'; })
 {
     if (!(scan_while(source, is_whitespace)))    return {};
-    return match_with(source, forward<Pred>(p), forward<Args>(args)...);
+    return match_when(source, forward<Pred>(p), forward<Args>(args)...);
 }
 
 
@@ -422,10 +470,10 @@ match_scan_delim_before (string_view& source,
                          const char_predicate& is_whitespace = [] (char c) constexpr -> bool { return c == ' ' || c == '\r'; })
 {
     scan_while(source, is_whitespace);
-    if (!( scan_with(source, is_delimiter) && scan_while(source, is_whitespace) ))
+    if (!( scan_when(source, is_delimiter) && scan_while(source, is_whitespace) ))
         return {};
 
-    return match_with(source, forward<Pred>(p), forward<Args>(args)...);
+    return match_when(source, forward<Pred>(p), forward<Args>(args)...);
 }
 
 
@@ -481,68 +529,125 @@ match_delimiter (string_view& source,
 }
 
 
-
-namespace Match {
-
-// Does the same as with(CharT), but is nice sugar when passing a string-like value
-template <typename CharT>
-auto lit (CharT literal)
+template <typename... Scanners>
+constexpr std::optional<string_view> match_any (string_view& source, const Scanners&... s)
 {
-    return [l = move(literal)] (string_view& source) -> string_view
-    {
-        return match_with(source, move(l));
-    };
+    return match_when(source, scan_any, forward<Scanners>(s)...);
 }
 
 
 template <typename... Args>
-auto with (Args... args)
+auto make_simple_matcher (matcher m, Args... args)
 {
-    return [... args = move(args)] (string_view& source) -> string_view
+    return [m = move(m), ...args = move(args)] (string_view& source) -> string_view
     {
-        return match_with(source, move(args)...);
+        return m(source, args...);
     };
 }
+
+
+namespace Match {
+
+// Does the same as with(literal), but is nice sugar when passing a string-like value
+template <typename CharT>
+auto lit (CharT literal)
+{ return make_simple_matcher(match_when, move(literal)); }
 
 
 template <typename T>
-auto match_while (T t)
-{
-    return [t = move(t)] (string_view& source) -> string_view
-    {
-        return PatLib::match_while(source, move(t));
-    };
-}
+auto when (T t)
+{ return make_simple_matcher(match_when, move(t)); }
+
+
+template <typename T>
+auto optional (T t)
+{ return make_simple_matcher(match_optional, move(t)); }
+
+
+template <typename T>
+auto while_it (T t)
+{ return make_simple_matcher(PatLib::match_while, move(t)); }
 
 
 template <typename T>
 auto stop_before (T t)
-{
-    return [t = move(t)] (string_view& source) -> string_view
-    {
-        return match_while_not(source, move(t));
-    };
-}
+{ return make_simple_matcher(match_while_not, move(t)); }
 
 
 template <typename T>
 auto until (T t)
-{
-    return [t = move(t)] (string_view& source) -> string_view
-    {
-        return match_until(source, move(t));
-    };
-}
+{ return make_simple_matcher(match_until, move(t)); }
 
 
 template <typename... Scanners>
 auto join (Scanners... scanners)
-{
-    return [... s = move(scanners)] (string_view& source) -> string_view
-    {
-        return match_join(source, move(s)...);
-    };
-}
+{ return make_simple_matcher(match_join, move(scanners)...); }
+
+
+template <typename... Scanners>
+auto any (const Scanners&... scanners)
+{ return make_simple_matcher(match_any, move(scanners)...); }
+
+
+// // Does the same as with(CharT), but is nice sugar when passing a string-like value
+// template <typename CharT>
+// auto lit (CharT literal)
+// {
+//     return [l = move(literal)] (string_view& source) -> string_view
+//     {
+//         return match_when(source, move(l));
+//     };
+// }
+
+
+// template <typename... Args>
+// auto when (Args... args)
+// {
+//     return [... args = move(args)] (string_view& source) -> string_view
+//     {
+//         return match_when(source, move(args)...);
+//     };
+// }
+
+
+// template <typename T>
+// auto match_while (T t)
+// {
+//     return [t = move(t)] (string_view& source) -> string_view
+//     {
+//         return PatLib::match_while(source, move(t));
+//     };
+// }
+
+
+// template <typename T>
+// auto stop_before (T t)
+// {
+//     return [t = move(t)] (string_view& source) -> string_view
+//     {
+//         return match_while_not(source, move(t));
+//     };
+// }
+
+
+// template <typename T>
+// auto until (T t)
+// {
+//     return [t = move(t)] (string_view& source) -> string_view
+//     {
+//         return match_until(source, move(t));
+//     };
+// }
+
+
+// template <typename... Scanners>
+// auto join (Scanners... scanners)
+// {
+//     return [... s = move(scanners)] (string_view& source) -> string_view
+//     {
+//         return match_join(source, move(s)...);
+//     };
+// }
 
 
 // Default seq function treats spaces and tab as whitespace

@@ -1,28 +1,30 @@
-# good doc: https://cliutils.gitlab.io/modern-cmake/
+# Helpful tutorials:
+# https://cliutils.gitlab.io/modern-cmake/
+# https://pabloariasal.github.io/2018/02/19/its-time-to-do-cmake-right/
+# https://foonathan.net/blog/2016/03/03/cmake-install.html
+
 
 cmake_minimum_required (VERSION 3.12)
 
 project (ProtoLang
          VERSION     0.0.0
-         DESCRIPTION "A fully extensible and modular language."
-         LANGUAGES   CXX)
+         DESCRIPTION "A fully extensible and modular language.")
+
+include_directories (include)
+
+add_subdirectory (pattern)
+add_subdirectory (syntax)
+add_subdirectory (system)
 
 add_executable (proto main.cpp)
+target_link_libraries (proto pattern syntax system)
+
 install (TARGETS proto DESTINATION bin)
 
-include_directories ("${PROJECT_SOURCE_DIR}/pattern")
-include_directories ("${PROJECT_SOURCE_DIR}/syntax")
 
 
 # CONFIGURE TESTING
 # ----------------------------------------------------------------------------------------------------------------------
-include (CMakeDependentOption)
-cmake_dependent_option (BUILD_TESTS "Build your tests" ON "CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME" OFF)
-
-if (BUILD_TESTS)
-    enable_testing ()
-endif ()
-
 # Don't compile GoogleTest separately from your codebase:
 #     https://groups.google.com/forum/#!msg/googletestframework/Zo7_HOv1MJ0/F4ZBGjh_ePcJ
 include (FetchContent)
@@ -36,17 +38,17 @@ FetchContent_MakeAvailable (googletest)
 
 include (GoogleTest)
 
-# usage: add_test_package (test test.cpp)
-macro (add_test_package TESTNAME)
+# usage: add_test_package (test-name library-name include-files...)
+macro (add_test_package TESTNAME LIBNAME)
     add_executable        (${TESTNAME} ${ARGN})
-    target_link_libraries (${TESTNAME} gtest gmock gtest_main)
-    set_target_properties (${TESTNAME} PROPERTIES FOLDER test)
+    target_link_libraries (${TESTNAME} ${LIBNAME} gmock gtest_main)
+    install               (TARGETS ${TESTNAME} DESTINATION test)
     gtest_discover_tests  (${TESTNAME})
 endmacro ()
 
 
 # ADD TESTS
 # ----------------------------------------------------------------------------------------------------------------------
-add_test_package (pattern-test pattern/test.cpp)
+add_test_package (PatternLibrary-test PatternLibrary pattern/test.cpp)
 
 

@@ -5,10 +5,8 @@
 #include "pattern.h"     // reader
 #include "syntax.h"      // token format
 
-
-using namespace PatLib;
+using namespace PL;
 using namespace Syntax;
-namespace PD = PatDef;
 
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -50,7 +48,8 @@ enum class TokenLiteral {
 
 struct Token {
     const int   type;
-    const void* value;};
+    const void* value;
+};
 
 
 
@@ -101,7 +100,7 @@ Token tokenize_keyword    (string code)    return {Tokentype::KEYWORD, code};
 
 
 
- 
+
 // Unknown character error
 int line, column;
 get_location(last_pos, line, column);

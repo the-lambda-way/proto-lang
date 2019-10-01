@@ -3,7 +3,6 @@
 
 #include <string>
 #include <vector>
-using namespace std;
 
 
 /***********************************************************************************************************************
@@ -15,18 +14,27 @@ using namespace std;
 namespace Syntax {
 
 
-struct SourceLoc {
-    const std::string origin   = "";
-    const int         position = 0;
-    const int         line     = 0;
-    const int         column   = 0;
+struct SourceLocation {
+    const std::string origin = "";
+    const int         index  = 0;
+    const int         line   = 0;
+    const int         column = 0;
+    const int         span   = 0;
 };
 
 
 struct SyntaxObject {
-    const std::string token;
-    const std::string lexeme;
-    const SourceLoc   location;
+    const std::string    name;
+    const std::string    lexeme;
+    const SourceLocation location;
+};
+
+
+template<class ValueType>
+struct SemanticObject {
+    const std::string  name;
+    const ValueType    value;
+    const SyntaxObject ancestor;
 };
 
 
@@ -42,8 +50,8 @@ public:
     
     const std::string & operator[] (int position) const;
 
-    SourceLoc   get_location (int position);
-    std::string get_line     (int line);
+    SourceLocation get_location (int position);
+    std::string    get_line     (int line);
 };
 
 

@@ -47,7 +47,7 @@ using std::tuple;
 /***********************************************************************************************************************
 * Pattern
 * The Pattern library provides functions that recognize a pattern beginning at a position of a string.
-* 
+*
 ***********************************************************************************************************************/
 
 namespace PatLib {
@@ -77,7 +77,7 @@ namespace detail {
     template< class T, class U >
     concept bool SameHelper = std::is_same_v<T, U>;
 }
- 
+
 template <class T, class U>
 concept bool same_as = detail::SameHelper<T, U> && detail::SameHelper<U, T>;
 
@@ -410,14 +410,14 @@ constexpr std::optional<string_view> match_when (string_view& source, const scan
     string_view copy = source;
 
     if (!s(source, forward<Args>(args)...))    return {};
-    
+
     return skipped(copy, source);
 }
 
 
 template <typename T>
 constexpr std::optional<string_view> match_optional (string_view& source, T&& t)
-{ 
+{
     auto match = match_when(source, forward<T>(t));
     return match.value_or(string_view(""));
 }
@@ -687,7 +687,7 @@ struct delimited_sequencer
     {
         return operator() (forward<Scanners>(s)..., is_delimiter, is_whitespace);
     }
-    
+
     template <typename... Scanners>
     auto operator() (Scanners&&... s, char_predicate is_delimiter)
     {
@@ -752,7 +752,7 @@ namespace Lex {
 //             auto match = lexer(source.substr(i, source.end()));
 //             if (match)   return std::make_tuple(source.substr(0, i), *match);
 //         }
-        
+
 //         return {};
 //     };
 // }
@@ -780,7 +780,7 @@ namespace Lex {
 
 //         auto matches = std::make_tuple(*match);
 //         source.remove_prefix(match->length());
-        
+
 
 //         // Rest
 //         for (auto lexer : lexers | drop_view(1)) {
@@ -845,7 +845,7 @@ namespace Lex {
 
 //         matches.push_back(match.value());
 //     }
-    
+
 
 //     return matches;
 // }

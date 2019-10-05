@@ -7,7 +7,7 @@
 #ifndef LOXPROTO
 #define LOXPROTO
 
-#include "pattern2.cpp"
+#include "pattern.h"
 
 #include <fstream>     // get_file_contents
 #include <iostream>    // getline
@@ -201,7 +201,7 @@ template <typename T>
 void error (T token, std::string message) {
     if (token.type == TokenType::END)    report(token.line, " at end", message);
     else                                 report(token.line, " at '" + token.lexeme + "'", message);
-    
+
 }
 
 
@@ -261,7 +261,7 @@ void Scanner::identifier ()
 void Scanner::string ()
 {
     string_view match = match_when(view, LoxLang::string).value();
-                                   
+
     add_token(TokenType::STRING, "", match.substr(1, match.length() - 2));
 }
 
@@ -312,7 +312,7 @@ void Scanner::scan_token ()
         case '\n':
             ++line;
             break;
-    
+
         default:
             found_simple = false;
     }
@@ -367,7 +367,7 @@ void run (std::string source) {
     // Tokenize
     Scanner scanner(source);
     auto& tokens = scanner.scan_tokens();
-    
+
     for (auto& token : tokens) {
         cout << token->to_string() << "\n";
     }

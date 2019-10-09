@@ -680,7 +680,7 @@ template <char_predicate P1, char_predicate P2>
 struct delimited_sequencer
 {
     P1 is_whitespace = [] (char c) -> bool { return c == ' ' || c == '\r'; };
-    P2 is_delimiter  = [] (char c) -> bool { return c == ';'; };
+    P2 is_delimiter  = [] (char c) -> bool { return c == ','; };
 
     template <typename... Scanners>
     auto operator() (Scanners&&... s)
@@ -700,7 +700,7 @@ struct delimited_sequencer
         return [... s = move(s), p1 = move(is_delimiter), p2 = move(is_whitespace)]
                (string_view& source) -> std::optional<Result>
         {
-            return match_delimited_sequence(source, move(s)..., move(p1), move(p2));
+            return match_delimiter(source, move(s)..., move(p1), move(p2));
         };
     }
 };

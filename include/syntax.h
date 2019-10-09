@@ -6,52 +6,44 @@
 #include <tuple>      // std::tie
 
 
-// source: http://insanecoding.blogspot.com/2011/11/how-to-read-in-file-in-c.html
-std::string get_file_contents (std::string path) {
+// Down the road, std::string functions should be replaced with a buffered stream for more efficient parsing.
+
+
+// based on http://insanecoding.blogspot.com/2011/11/how-to-read-in-file-in-c.html
+std::string file_to_string (std::string path, size_t index = 0, size_t span = -1)
+{
     using namespace std;
 
     // Open file
     ifstream file (path, ios::in | ios::binary | ios::ate);
-    if (!file)    throw (errno);
+    if (!file)   throw (errno);
 
-    // Create string of sufficient size
+    // Adjust span if needed
+    span = std::min(span, (size_t) file.tellg() - index);
+
+    // Allocate string memory
     std::string contents;
-    contents.resize(file.tellg());
+    contents.resize(span);
 
-    // Read complete file into string
-    file.seekg(0, ios::beg);
-    file.read(&contents[0], contents.size());
+    // Read file contents into string
+    file.seekg(index);
+    file.read(&contents[0], span);
 
     return contents;
 }
 
 
-// Returns a pair (line, index) of the current line and the index it starts at, relative to "first".
-template <typename CharT>
-constexpr std::pair<int, int> count_lines (const CharT* first, const CharT* last)
-{
-    int line  = 1;
-    int index = 0;
-
-    for (auto i = first;    i != last;    ++i)
-        if (*i == '\n')
-        {
-            ++line;
-            index = i - first;
-        }
-
-    return {line, index};
-}
-
-
+// path should maybe change to a shared smart file pointer at some point, since source code metadata is transient in nature.
 struct source_location
 {
     const char* path;
     const int   index;
+    const int   span;
 
-    file_position position ()    { return {path, index}; }
-    int line   ()    { return position().line;   }
-    int column ()    { return position().column; }
+    constexpr file_position position  ()    { return {path, index}; }
+    constexpr int           line      ()    { return position().line;   }
+    constexpr int           column    ()    { return position().column; }
+              std::string   to_string ()    { return file_to_string(path, index, span); }
 };
 
 
@@ -62,14 +54,47 @@ struct file_position
 
     constexpr file_position (int line, int column) : line {line}, column {column} {}
 
-    constexpr file_position (const char* path, int index)
+    file_position (const char* path, int index)
     {
-        string_view contents   = get_file_contents(path);
-        std::tie(line, column) = count_lines(contents.begin(), &contents[index]);
-        column = index - column - 1;
+        std::string contents = file_to_string(path, 0, index);
+
+        line = 1;
+        auto begin = contents.begin();
+        auto mark  = begin;
+
+        for (auto i = begin;    i != contents.end();    ++i)
+            if (*i == '\n')
+            {
+                ++line;
+                mark = i;
+            }
+
+        column = index - (mark - begin) - 1;
     }
 
-    constexpr file_position (const source_location& s) : file_position {s.path, s.index} {]
+    file_position (const source_location& s) : file_position {s.path, s.index} {}
+};
+
+
+
+template <typename ObjectType, typename ValueType>
+struct syntax_object
+{
+    const ObjectType type;
+    const ValueType  literal;
+};
+
+template <typename ObjectType, typename ValueType>
+struct syntax_object_loc
+{
+    const ObjectType      type;
+    const ValueType       literal;
+    const source_location location;
+
+    constexpr file_postion postion ()    { return location.position(); }
+    constexpr int          line    ()    { return location.line();     }
+    constexpr int          column  ()    { return location.column();   }
+              std::string  lexeme  ()    { return location.to_string(); }
 };
 
 

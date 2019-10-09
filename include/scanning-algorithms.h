@@ -144,7 +144,7 @@ constexpr bool advance_while (InputIt& first, InputIt last, string_view literal)
 
 
 template <typename InputIt>
-constexpr bool advance_max_if (InputIt& first, InputIt last, char c, size_t max = size_t(-1))
+constexpr bool advance_max_if (InputIt& first, InputIt last, char c, size_t max = -1)
 {
     last = first + std::min(last - first, max);
     while (advance_if(first, last, c));
@@ -180,7 +180,7 @@ constexpr bool advance_min_if (InputIt& first, InputIt last, char c, size_t min 
 
 template <typename InputIt>
 constexpr bool advance_repeating (InputIt& first, InputIt last, char c,
-                                  size_t min = 0, size_t max = size_t(-1))
+                                  size_t min = 0, size_t max = -1)
 {
     if (max < min)    return false;
 

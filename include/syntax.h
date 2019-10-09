@@ -1,61 +1,76 @@
-#ifndef SYNTAX_H
-#define SYNTAX_H
+#ifndef SYNTAX
+#define SYNTAX
 
+#include <fstream>    // get_file_contents
 #include <string>
-#include <vector>
+#include <tuple>      // std::tie
 
 
-/***********************************************************************************************************************
- * Syntax Library
- * The Syntax Library provides abstraction mechanisms for inspecting and manipulating source code.
- * 
- **********************************************************************************************************************/
+// source: http://insanecoding.blogspot.com/2011/11/how-to-read-in-file-in-c.html
+std::string get_file_contents (std::string path) {
+    using namespace std;
 
-namespace Syntax {
+    // Open file
+    ifstream file (path, ios::in | ios::binary | ios::ate);
+    if (!file)    throw (errno);
+
+    // Create string of sufficient size
+    std::string contents;
+    contents.resize(file.tellg());
+
+    // Read complete file into string
+    file.seekg(0, ios::beg);
+    file.read(&contents[0], contents.size());
+
+    return contents;
+}
 
 
-struct SourceLocation {
-    const std::string origin = "";
-    const int         index  = 0;
-    const int         line   = 0;
-    const int         column = 0;
-    const int         span   = 0;
+// Returns a pair (line, index) of the current line and the index it starts at, relative to "first".
+template <typename CharT>
+constexpr std::pair<int, int> count_lines (const CharT* first, const CharT* last)
+{
+    int line  = 1;
+    int index = 0;
+
+    for (auto i = first;    i != last;    ++i)
+        if (*i == '\n')
+        {
+            ++line;
+            index = i - first;
+        }
+
+    return {line, index};
+}
+
+
+struct source_location
+{
+    const char* path;
+    const int   index;
+
+    file_position position ()    { return {path, index}; }
+    int line   ()    { return position().line;   }
+    int column ()    { return position().column; }
 };
 
 
-struct SyntaxObject {
-    const std::string    name;
-    const std::string    lexeme;
-    const SourceLocation location;
+struct file_position
+{
+    int line;
+    int column;
+
+    constexpr file_position (int line, int column) : line {line}, column {column} {}
+
+    constexpr file_position (const char* path, int index)
+    {
+        string_view contents   = get_file_contents(path);
+        std::tie(line, column) = count_lines(contents.begin(), &contents[index]);
+        column = index - column - 1;
+    }
+
+    constexpr file_position (const source_location& s) : file_position {s.path, s.index} {]
 };
 
 
-template<class ValueType>
-struct SemanticObject {
-    const std::string  name;
-    const ValueType    value;
-    const SyntaxObject ancestor;
-};
-
-
-// SourceCode represents an immutable body of code, providing metadata.
-class SourceCode {
-public:
-    SourceCode (std::string origin, std::string source);
-
-          int         pos      = 0;
-    const int         src_end;
-    const std::string source;
-    const std::string origin;
-    
-    const std::string & operator[] (int position) const;
-
-    SourceLocation get_location (int position);
-    std::string    get_line     (int line);
-};
-
-
-} // namespace Syntax
-
-
-#endif
+#endif // SYNTAX

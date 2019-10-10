@@ -1,6 +1,7 @@
 #ifndef SCANNING_ALGORITHMS
 #define SCANNING_ALGORITHMS
 
+#include <algorithm>
 #include <string_view>
 using std::string_view;
 
@@ -84,7 +85,7 @@ constexpr bool advance_if (Range& r, T t)
 
 
 template <typename InputIt>
-constexpr void advance_if_not (InputIt& first, InputIt last, char c)
+constexpr bool advance_if_not (InputIt& first, InputIt last, char c)
 {
     if (starts_with(first, last, c))    return false;
     ++first;
@@ -92,7 +93,7 @@ constexpr void advance_if_not (InputIt& first, InputIt last, char c)
 }
 
 template <typename InputIt>
-constexpr void advance_if_not (InputIt& first, InputIt last, char_predicate p)
+constexpr bool advance_if_not (InputIt& first, InputIt last, char_predicate p)
 {
     if (starts_with(first, last, p))    return false;
     ++first;
@@ -101,7 +102,7 @@ constexpr void advance_if_not (InputIt& first, InputIt last, char_predicate p)
 
 
 template <typename InputIt>
-constexpr void advance_if_not (InputIt& first, InputIt last, string_view literal)
+constexpr bool advance_if_not (InputIt& first, InputIt last, string_view literal)
 {
     if (starts_with(first, last, literal))    return false;
     ++first;
@@ -128,7 +129,7 @@ constexpr bool advance_while (InputIt& first, InputIt last, char c)
 
 
 template <typename InputIt>
-constexpr bool advance_while (InputIt& first, InputIt last, char_predicates p)
+constexpr bool advance_while (InputIt& first, InputIt last, char_predicate p)
 {
     while (starts_with(first, last, p))    ++first;
     return true;
@@ -155,9 +156,9 @@ constexpr bool advance_max_if (InputIt& first, InputIt last, char c, size_t max 
 template <typename InputIt>
 constexpr bool advance_n_if (InputIt& first, InputIt last, char c, size_t n)
 {
-    if constexpr (first - last < n)    return false;
-    if constexpr (n == 0)              return true;
-    if conxtexpr (n == 1)              return advance_if(first, last, c);
+    if (first - last < n)    return false;
+    if (n == 0)              return true;
+    if (n == 1)              return advance_if(first, last, c);
 
     InputIt copy = first;
 
@@ -173,7 +174,7 @@ template <typename InputIt>
 constexpr bool advance_min_if (InputIt& first, InputIt last, char c, size_t min = 0)
 {
     if (!advance_n_if(first, last, c, min))    return false;
-    advance_while(first, last, c));
+    advance_while(first, last, c);
     return true;
 }
 

@@ -15,28 +15,27 @@ class scouting_iterator
 {
 protected:
     using traits_type      = std::iterator_traits<Iter>;
-    using pointer_type     = traits_type::pointer;
     using convertible_type = scouting_iterator<
         Iter,
         typename std::enable_if<std::is_same_v<Iter, typename Container::pointer>,
-                                Container::type>;
+                                Container>::type
+        >;
 
-    pointer_type scout;
-    pointer_type sentry;
+    Iter scout;
+    Iter sentry;
 
 public:
     // Types
     using iterator_category      = traits_type::iterator_category;
-    using iterator               = std::iterator_type;
-    using const_iterator         = const iterator;
-    using reverse_iterator       = std::reverse_iterator<iterator>;
-    using const_reverse_iterator = std::reverse_iterator<const_iterator>;
+    using iterator_type          = traits_type::iterator;
+    using pointer_type           = traits_type::pointer;
     using value_type             = traits_type::value_type;
     using difference_type        = traits_type::difference_type;
     using reference              = traits_type::reference;
     using const_reference        = const reference;
     using pointer                = pointer_type;
     using const_pointer          = const pointer*;
+    using size_type              = std::size_t;
 
 
     // Constructors
@@ -52,22 +51,12 @@ public:
         : sentry {i.sentry()}, scout {sentry}
     {}
 
-    constexpr reference operator= (pointer p)
-    {
-        scout = p;
-    }
+    constexpr reference operator= (pointer p)    { scout = p; }
 
 
     // Operations
-    constexpr reference operator* () const noexcept
-    {
-        return *scout;
-    }
-
-    constexpr pointer operator-> () const noexcept
-    {
-        return scout;
-    }
+    constexpr reference operator*  () const noexcept    { return *scout; }
+    constexpr pointer   operator-> () const noexcept    { return scout;  }
 
     constexpr reference operator++ () noexcept
     {
@@ -103,12 +92,12 @@ public:
         return *(scout += n);
     }
 
-    friend constexpr value_type operator+ (convertible_type i, difference_type n) const noexcept
+    friend constexpr value_type operator+ (convertible_type i, difference_type n)
     {
         return i += n;
     }
 
-    friend constexpr value_type operator+ (difference_type n, convertible_type i) const noexcept
+    friend constexpr value_type operator+ (difference_type n, convertible_type i)
     {
         return i += n;
     }
@@ -118,7 +107,7 @@ public:
         return *(scout -= n);
     }
 
-    friend constexpr value_type operator- (convertible_type i, difference_type n) const noexcept
+    friend constexpr value_type operator- (convertible_type i, difference_type n)
     {
         return i -= n;
     }
@@ -138,10 +127,13 @@ public:
         return lhs - rhs.scout;
     }
 
-    friend constexpr bool operator <=> (const convertible_type& lhs, const convertible_type& rhs)
-    {
-        return lhs.scout <=> rhs.scout;
-    }
+    friend constexpr bool operator <  (convertible_type lhs, convertible_type rhs)    { return lhs.scout <  rhs.scout; }
+    friend constexpr bool operator <= (convertible_type lhs, convertible_type rhs)    { return lhs.scout <= rhs.scout; }
+    friend constexpr bool operator >  (convertible_type lhs, convertible_type rhs)    { return lhs.scout >  rhs.scout; }
+    friend constexpr bool operator >= (convertible_type lhs, convertible_type rhs)    { return lhs.scout >= rhs.scout; }
+    friend constexpr bool operator == (convertible_type lhs, convertible_type rhs)    { return lhs.scout == rhs.scout; }
+    friend constexpr bool operator != (convertible_type lhs, convertible_type rhs)    { return lhs.scout != rhs.scout; }
+
 
     constexpr reference save () noexcept
     {
@@ -155,30 +147,11 @@ public:
         return scout;
     }
 
-    constexpr reference sentry () const noexcept
-    {
-        return sentry;
-    }
-
-    constexpr reference begin () const noexcept
-    {
-        return sentry;
-    }
-
-    constexpr reference scout () const noexcept
-    {
-        return scout;
-    }
-
-    constexpr reference end () const noexcept
-    {
-        return scout;
-    }
-
-    constexpr reference get () const noexcept
-    {
-        return scout;
-    }
+    constexpr reference get_sentry () const noexcept    { return sentry; }
+    constexpr reference begin      () const noexcept    { return sentry; }
+    constexpr reference get_scout  () const noexcept    { return scout;  }
+    constexpr reference end        () const noexcept    { return scout;  }
+    constexpr reference get        () const noexcept    { return scout;  }
 
     constexpr difference_type distance () const noexcept
     {

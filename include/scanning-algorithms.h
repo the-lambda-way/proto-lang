@@ -77,7 +77,7 @@ constexpr bool advance_if (InputIt& first, InputIt last, string_view literal)
 }
 
 
-template <typename Range, typename T, typename InputIt>
+template <typename Range, typename T>
 constexpr bool advance_if (Range& r, T t)
 {
     return advance_if(&r.begin(), r.end(), t);
@@ -109,6 +109,12 @@ constexpr bool advance_if_not (InputIt& first, InputIt last, string_view literal
     return true;
 }
 
+template <typename Range, typename T>
+constexpr bool advance_if_not (Range& r, T t)
+{
+    return advance_if_not(&r.begin(), r.end(), t);
+}
+
 
 // Returns true even on no match
 template <typename InputIt, typename T>
@@ -116,6 +122,13 @@ constexpr bool advance_optionally (InputIt& first, InputIt last, T t)
 {
     advance_if(first, last, t);
     return true;
+}
+
+
+template <typename Range, typename T>
+constexpr bool advance_optionally (Range& r, T t)
+{
+    return advance_optionally(&r.begin(), r.end(), t);
 }
 
 
@@ -144,12 +157,25 @@ constexpr bool advance_while (InputIt& first, InputIt last, string_view literal)
 }
 
 
+template <typename Range, typename T>
+constexpr bool advance_while (Range& r, T t)
+{
+    return advance_while(&r.begin(), r.end(), t);
+}
+
+
 template <typename InputIt>
 constexpr bool advance_max_if (InputIt& first, InputIt last, char c, size_t max = -1)
 {
     last = first + std::min(last - first, max);
     while (advance_if(first, last, c));
     return true;
+}
+
+template <typename Range, typename T>
+constexpr bool advance_max_if (Range& r, T t, size_t max = -1)
+{
+    return advance_max_if(&r.begin(), r.end(), t, max);
 }
 
 
@@ -169,6 +195,14 @@ constexpr bool advance_n_if (InputIt& first, InputIt last, char c, size_t n)
     return true;
 }
 
+
+template <typename Range, typename T>
+constexpr bool advance_n_if (Range& r, T t, size_t n)
+{
+    return advance_n_if(&r.begin(), r.end(), t, n);
+}
+
+
 // Probably needs an optional return value
 template <typename InputIt>
 constexpr bool advance_min_if (InputIt& first, InputIt last, char c, size_t min = 0)
@@ -176,6 +210,13 @@ constexpr bool advance_min_if (InputIt& first, InputIt last, char c, size_t min 
     if (!advance_n_if(first, last, c, min))    return false;
     advance_while(first, last, c);
     return true;
+}
+
+
+template <typename Range, typename T>
+constexpr bool advance_min_if (Range& r, T t, size_t min = 0)
+{
+    return advance_min_if(&r.begin(), r.end(), t, min);
 }
 
 
@@ -188,6 +229,13 @@ constexpr bool advance_repeating (InputIt& first, InputIt last, char c,
     if (!advance_n_if(first, last, c, min))    return false;
     advance_max_if(first, last, c, max - min);
     return true;
+}
+
+
+template <typename Range, typename T>
+constexpr bool advance_min_if (Range& r, T&& t, size_t min = 0, size_t max = -1)
+{
+    return advance_min_if(&r.begin(), r.end(), t, min, max);
 }
 
 
@@ -226,10 +274,10 @@ constexpr bool advance_to_if_found (InputIt& first, InputIt last, string_view li
 }
 
 
-template <typename Range, typename T, typename InputIt>
-constexpr bool advance_to_if_found (Range r, T&& t)
+template <typename Range, typename T>
+constexpr bool advance_to_if_found (Range r, T t)
 {
-    return advance_if_found(r.begin(), r.end(), forward<T>(t));
+    return advance_if_found(r.begin(), r.end(), t);
 }
 
 
@@ -268,7 +316,7 @@ constexpr bool advance_past_if_found (InputIt& first, InputIt last, string_view 
 }
 
 
-template <typename Range, typename T, typename InputIt>
+template <typename Range, typename T>
 constexpr bool advance_past_if_found (Range& r, T t)
 {
     return advance_past_if_found(&r.begin(), r.end(), t);
@@ -290,7 +338,7 @@ constexpr bool advance_if_any (Range& r, Exp... e)
 
 
 template <typename InputIt, typename... Exp>
-constexpr bool advance_joined (InputIt& first, InputIt last, Exp... e)
+constexpr bool advance_joined_if (InputIt& first, InputIt last, Exp... e)
 {
     InputIt copy = first;
 
@@ -302,7 +350,7 @@ constexpr bool advance_joined (InputIt& first, InputIt last, Exp... e)
 
 
 template <typename Range, typename... Exp>
-constexpr bool advance_joined (Range& r, Exp... e)
+constexpr bool advance_joined_if (Range& r, Exp... e)
 {
     return advance_joined(&r.begin(), r.end(), e...);
 }

@@ -33,24 +33,26 @@ std::string file_to_string (std::string path, size_t index = 0, size_t span = -1
 }
 
 
+struct file_position;
+
 // path should maybe change to a shared smart file pointer at some point, since source code metadata is transient in nature.
 struct source_location
 {
-    const char* path;
-    const int   index;
-    const int   span;
+    const char* path  = "";
+    const int   index = 0;
+    const int   span  = 0;
 
-    constexpr file_position position  ()    { return {path, index}; }
-    constexpr int           line      ()    { return position().line;   }
-    constexpr int           column    ()    { return position().column; }
-              std::string   to_string ()    { return file_to_string(path, index, span); }
+    file_position position  ();
+    int           line      ();
+    int           column    ();
+    std::string   to_string ();
 };
 
 
 struct file_position
 {
-    int line;
-    int column;
+    int line   = 0;
+    int column = 0;
 
     constexpr file_position (int line, int column) : line {line}, column {column} {}
 
@@ -68,33 +70,53 @@ struct file_position
                 ++line;
                 mark = i;
             }
-
-        column = index - (mark - begin) - 1;
     }
 
     file_position (const source_location& s) : file_position {s.path, s.index} {}
 };
 
 
+file_position source_location::position  ()    { return {path, index};     }
+int           source_location::line      ()    { return position().line;   }
+int           source_location::column    ()    { return position().column; }
+std::string   source_location::to_string ()    { return file_to_string(path, index, span); }
+
 
 template <typename ObjectType, typename ValueType>
-struct syntax_object
+class token
+{
+public:
+    ObjectType type;
+    ValueType  literal;
+
+    constexpr token (ObjectType type)                    : type {type}, literal {""} {}
+    constexpr token (ObjectType type, ValueType literal) : type {type}, literal {literal} {}
+};
+
+
+template <typename ObjectType, typename ValueType>
+struct token_loc
 {
     const ObjectType type;
     const ValueType  literal;
-};
+    source_location  location;
 
-template <typename ObjectType, typename ValueType>
-struct syntax_object_loc
-{
-    const ObjectType      type;
-    const ValueType       literal;
-    const source_location location;
+    constexpr file_position postion ()    { return location.position();  }
+    constexpr int           line    ()    { return location.line();      }
+    constexpr int           column  ()    { return location.column();    }
+              std::string   lexeme  ()    { return location.to_string(); }
 
-    constexpr file_postion postion ()    { return location.position(); }
-    constexpr int          line    ()    { return location.line();     }
-    constexpr int          column  ()    { return location.column();   }
-              std::string  lexeme  ()    { return location.to_string(); }
+    constexpr token_loc (ObjectType type)
+        : type {type}, literal {""}, location {}
+    {}
+
+    constexpr token_loc (ObjectType type, ValueType literal)
+        : type {type}, literal {literal}, location {}
+    {}
+
+    constexpr token_loc (ObjectType type, ValueType literal, source_location location)
+        : type {type}, literal {literal}, location {location}
+    {}
 };
 
 

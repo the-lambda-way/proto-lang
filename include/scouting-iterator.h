@@ -4,8 +4,8 @@
 #include <iterator>    // type traits
 
 
-// A scouting iterator is a pair of iterators designed for 2-stage traversal, where one iterator progresses
-//     speculatively while the other maintains a previous position.
+// A scouting iterator is a pair of iterators designed for 2-stage traversal, where one iterator progresses while the
+//     other maintains a previous position.
 // Can be used as a range, if you wish to iterate over the span between the two iterators.
 
 // Based on the design of __normal_iterator from GCC 9 (stl_iterator.h)
@@ -25,16 +25,12 @@ protected:
     Iter sentry;
 
 public:
-    // Types
+    // Traits
     using iterator_category      = traits_type::iterator_category;
-    using iterator_type          = traits_type::iterator;
-    using pointer_type           = traits_type::pointer;
     using value_type             = traits_type::value_type;
-    using difference_type        = traits_type::difference_type;
+    using pointer                = traits_type::pointer;
     using reference              = traits_type::reference;
-    using const_reference        = const reference;
-    using pointer                = pointer_type;
-    using const_pointer          = const pointer*;
+    using difference_type        = traits_type::difference_type;
     using size_type              = std::size_t;
 
 
@@ -60,25 +56,25 @@ public:
 
     constexpr reference operator++ () noexcept
     {
-        return *(++scout);
+        return ++scout;
     }
 
-    constexpr value_type operator++ (int) noexcept
+    constexpr reference operator++ (int) noexcept
     {
-        value_type tmp = *scout;
+        reference tmp = scout;
         operator++();
         return tmp;
     }
 
     constexpr reference operator-- () noexcept
     {
-        return *(--scout);
+        return --scout;
     }
 
-    constexpr value_type operator-- (int) noexcept
+    constexpr reference operator-- (int) noexcept
     {
-        value_type tmp = *scout;
-        operator--();
+        reference tmp = scout;
+        --scout;
         return tmp;
     }
 
@@ -89,7 +85,7 @@ public:
 
     constexpr reference operator+= (difference_type n) noexcept
     {
-        return *(scout += n);
+        return scout += n;
     }
 
     friend constexpr value_type operator+ (convertible_type i, difference_type n)
@@ -127,12 +123,12 @@ public:
         return lhs - rhs.scout;
     }
 
-    friend constexpr bool operator <  (convertible_type lhs, convertible_type rhs)    { return lhs.scout <  rhs.scout; }
-    friend constexpr bool operator <= (convertible_type lhs, convertible_type rhs)    { return lhs.scout <= rhs.scout; }
-    friend constexpr bool operator >  (convertible_type lhs, convertible_type rhs)    { return lhs.scout >  rhs.scout; }
-    friend constexpr bool operator >= (convertible_type lhs, convertible_type rhs)    { return lhs.scout >= rhs.scout; }
-    friend constexpr bool operator == (convertible_type lhs, convertible_type rhs)    { return lhs.scout == rhs.scout; }
-    friend constexpr bool operator != (convertible_type lhs, convertible_type rhs)    { return lhs.scout != rhs.scout; }
+    friend constexpr bool operator <  (convertible_type other)    { return scout <  other.scout; }
+    friend constexpr bool operator <= (convertible_type other)    { return scout <= other.scout; }
+    friend constexpr bool operator >  (convertible_type other)    { return scout >  other.scout; }
+    friend constexpr bool operator >= (convertible_type other)    { return scout >= other.scout; }
+    friend constexpr bool operator == (convertible_type other)    { return scout == other.scout; }
+    friend constexpr bool operator != (convertible_type other)    { return scout != other.scout; }
 
 
     constexpr reference save () noexcept

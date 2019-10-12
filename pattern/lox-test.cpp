@@ -1,4 +1,4 @@
-// An implementation of the Lox language using the Pattern library
+// An implementation of the Lox language in C++
 // http://www.craftinginterpreters.com/scanning.html
 // http://www.craftinginterpreters.com/representing-code.html
 // https://github.com/munificent/craftinginterpreters/tree/master/java/com/craftinginterpreters/lox
@@ -147,7 +147,7 @@ template <typename T>
 void error (T token, std::string message) {
     if (token.type == TokenType::END)    report(token.line, " at end", message);
     else                                 report(token.line, " at '" + token.lexeme + "'", message);
-    
+
 }
 
 
@@ -259,7 +259,7 @@ void Scanner::scan_token () {
                 while (peek() != '\n' && !is_at_end())    advance();
             else
                 add_token(SLASH);
-            
+
             break;
 
         case ' ':
@@ -271,9 +271,9 @@ void Scanner::scan_token () {
         case '\n':
             ++line;
             break;
-    
+
         case '"': string(); break;
-    
+
         default:
                  if (is_digit(c))    number();
             else if (is_alpha(c))    identifier();
@@ -290,7 +290,7 @@ void Scanner::identifier () {
     std::string text = source.substr(start, current - start);
 
     auto match = keywords.find(text);
-    
+
     if (match == keywords.end())    add_token(TokenType::IDENTIFIER, text);
     else                            add_token(match->second);
 }
@@ -368,7 +368,7 @@ bool Scanner::is_alpha_numeric (char c) {
 bool Scanner::is_digit (char c) {
     return '0' <= c && c <= '9';
 }
-    
+
 
 bool Scanner::is_at_end () {
     return current >= source.length();
@@ -402,7 +402,7 @@ void run (std::string source) {
     // Tokenize
     Scanner scanner(source);
     auto& tokens = scanner.scan_tokens();
-    
+
     for (auto& token : tokens) {
         cout << token->to_string() << "\n";
     }

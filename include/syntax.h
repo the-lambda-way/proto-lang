@@ -100,28 +100,28 @@ struct file_position
 
 
     template <typename CharT>
-    constexpr file_position (CharT* data, CharT* position)
+    constexpr file_position (const CharT* data, const CharT* position)
     {
         convert_from(data, position);
     }
 
 
     template <typename CharT>
-    constexpr file_position (CharT* data, size_t position)
+    constexpr file_position (const CharT* data, size_t position)
     {
         convert_from(data, data + position);
     }
 
 
     template <typename CharT>
-    constexpr file_position (CharT* data, std::basic_string_view<CharT> lexeme)
+    constexpr file_position (const CharT* data, std::basic_string_view<CharT> lexeme)
     {
-        convert_from(data, lexeme.data();
+        convert_from(data, lexeme.data());
     }
 
 
     template <typename CharT>
-    constexpr file_position (CharT* data, source_location location)
+    constexpr file_position (const CharT* data, source_location location)
     {
         convert_from(data, data + location.position);
     }
@@ -164,7 +164,7 @@ struct file_position
 
 private:
     template <typename CharT>
-    constexpr void convert_from (CharT* data, CharT* position)
+    constexpr void convert_from (const CharT* data, const CharT* position)
     {
         line = 1;
         auto mark = data;
@@ -195,19 +195,31 @@ public:
 };
 
 
-// THolds a reference to source in order to view its lexeme and construct metadata when needed.
+// Holds a reference to source in order to view its lexeme and construct metadata when needed.
 // Recommended for use where access to token metadata is rare.
 template <typename ObjectType, typename ValueType, typename CharT = char>
-struct token_ref
+struct token_lex
 {
     const ObjectType type;
     const ValueType  value;
     const std::basic_string_view<CharT> lexeme;
 
-    constexpr size_t          position      (CharT* data)    { return lexeme.data() - data; }
-    constexpr size_t          span          ()               { return lexeme.length();      }
-    constexpr source_location location      (CharT* data)    { return {data, lexeme};       }
-    constexpr file_position   file_position (CharT* data)    { return {data, lexeme};       }
+    constexpr token_lex (ObjectType type)
+        : type {type}, value {std::monostate{}}, lexeme {}
+    {}
+
+    constexpr token_lex (ObjectType type, ValueType value)
+        : type {type}, value {value}, lexeme {}
+    {}
+
+    constexpr token_lex (ObjectType type, ValueType value, std::basic_string_view<CharT> lexeme)
+        : type {type}, value {value}, lexeme {lexeme}
+    {}
+
+    constexpr size_t          position      (const CharT* data) const    { return lexeme.data() - data; }
+    constexpr size_t          span          ()                  const    { return lexeme.length();      }
+    constexpr source_location location      (const CharT* data) const    { return {data, lexeme};       }
+    constexpr ::file_position file_position (const CharT* data) const    { return {data, lexeme};       }
 };
 
 
@@ -222,7 +234,7 @@ struct token_loc
     const ObjectType      type;
     const ValueType       value;
     const source_location location;
-    const file_position   file_position;
+    const ::file_position file_position;
     const CharT*          data;
     const std::string     origin;
 
@@ -241,11 +253,11 @@ struct token_loc
     constexpr token_loc () = default;
 
     constexpr token_loc (ObjectType type, ValueType value, CharT* data, CharT* start, CharT* end, std::string origin)
-        : type {type}, value {value}, location {data, start, end}, position {data, start}, data {data}, origin {origin}
+        : type {type}, value {value}, location {data, start, end}, file_position {data, start}, data {data}, origin {origin}
     {}
 
-    constexpr token_loc (token_ref ref, CharT* data, std::string origin)
-        : token_loc {ref.type, ref.value, data, ref.lexeme.data(), ref.data() + ref.length(), origin}
+    constexpr token_loc (token_lex<ObjectType, ValueType, CharT> t, CharT* data, std::string origin)
+        : token_loc {t.type, t.value, data, t.lexeme.data(), t.data() + t.length(), origin}
     {}
 };
 

@@ -26,8 +26,8 @@ class scouting_iterator
 
     using self_type = scouting_iterator<Iter, Container>;
 
-    Iter scout  = Iter {};
     Iter sentry = Iter {};
+    Iter scout  = Iter {};
 
 public:
     // Traits

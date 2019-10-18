@@ -5,6 +5,11 @@
 #include <string>
 
 
+/***********************************************************************************************************************
+ * Syntax Library
+ * The Syntax Library provides abstractions for inspecting and managing source code.
+ *
+ **********************************************************************************************************************/
 
 
 struct source_location
@@ -183,37 +188,37 @@ private:
 };
 
 
-template <typename ObjectType, typename ValueType>
+template <typename TagType, typename ValueType>
 class token
 {
 public:
-    ObjectType type;
-    ValueType  value;
+    TagType   tag;
+    ValueType value;
 
-    constexpr token (ObjectType type)                    : type {type}, value {""} {}
-    constexpr token (ObjectType type, ValueType literal) : type {type}, value {value} {}
+    constexpr token (TagType tag)                    : tag {tag}, value {""} {}
+    constexpr token (TagType tag, ValueType literal) : tag {tag}, value {value} {}
 };
 
 
 // Holds a reference to source in order to view its lexeme and construct metadata when needed.
 // Recommended for use where access to token metadata is rare.
-template <typename ObjectType, typename ValueType, typename CharT = char>
+template <typename TagType, typename ValueType, typename CharT = char>
 struct token_lex
 {
-    const ObjectType type;
-    const ValueType  value;
+    const TagType   tag;
+    const ValueType value;
     const std::basic_string_view<CharT> lexeme;
 
-    constexpr token_lex (ObjectType type)
-        : type {type}, value {std::monostate{}}, lexeme {}
+    constexpr token_lex (TagType tag)
+        : tag {tag}, value {std::monostate{}}, lexeme {}
     {}
 
-    constexpr token_lex (ObjectType type, ValueType value)
-        : type {type}, value {value}, lexeme {}
+    constexpr token_lex (TagType tag, ValueType value)
+        : tag {tag}, value {value}, lexeme {}
     {}
 
-    constexpr token_lex (ObjectType type, ValueType value, std::basic_string_view<CharT> lexeme)
-        : type {type}, value {value}, lexeme {lexeme}
+    constexpr token_lex (TagType tag, ValueType value, std::basic_string_view<CharT> lexeme)
+        : tag {tag}, value {value}, lexeme {lexeme}
     {}
 
     constexpr size_t          position      (const CharT* data) const    { return lexeme.data() - data; }
@@ -228,38 +233,38 @@ struct token_lex
 
 // Calculates and holds all metadata upon its construction.
 // Recommended for use where access to token metadata is frequent.
-template <typename ObjectType, typename ValueType, typename CharT = char>
-struct token_loc
-{
-    const ObjectType      type;
-    const ValueType       value;
-    const source_location location;
-    const ::file_position file_position;
-    const CharT*          data;
-    const std::string     origin;
+// template <typename TagType, typename ValueType, typename CharT = char>
+// struct token_loc
+// {
+//     const TagType         tag;
+//     const ValueType       value;
+//     const source_location location;
+//     const ::file_position file_position;
+//     const CharT*          data;
+//     const std::string     origin;
 
 
-    constexpr size_t position ()    { return location.position;    }
-    constexpr size_t span     ()    { return location.span;        }
-    constexpr int    line     ()    { return file_position.line;   }
-    constexpr int    column   ()    { return file_position.column; }
+//     constexpr size_t position ()    { return location.position;    }
+//     constexpr size_t span     ()    { return location.span;        }
+//     constexpr int    line     ()    { return file_position.line;   }
+//     constexpr int    column   ()    { return file_position.column; }
 
-    constexpr std::basic_string_view<CharT> lexeme ()    { return {data + position(), span()}; }
-
-
-    // Probably need to add more constructors, maybe create a separate token_information object
+//     constexpr std::basic_string_view<CharT> lexeme ()    { return {data + position(), span()}; }
 
 
-    constexpr token_loc () = default;
+//     // Probably need to add more constructors, maybe create a separate token_information object
 
-    constexpr token_loc (ObjectType type, ValueType value, CharT* data, CharT* start, CharT* end, std::string origin)
-        : type {type}, value {value}, location {data, start, end}, file_position {data, start}, data {data}, origin {origin}
-    {}
 
-    constexpr token_loc (token_lex<ObjectType, ValueType, CharT> t, CharT* data, std::string origin)
-        : token_loc {t.type, t.value, data, t.lexeme.data(), t.data() + t.length(), origin}
-    {}
-};
+//     constexpr token_loc () = default;
+
+//     constexpr token_loc (TagType tag, ValueType value, CharT* data, CharT* start, CharT* end, std::string origin)
+//         : tag {tag}, value {value}, location {data, start, end}, file_position {data, start}, data {data}, origin {origin}
+//     {}
+
+//     constexpr token_loc (token_lex<TagType, ValueType, CharT> t, CharT* data, std::string origin)
+//         : token_loc {t.tag, t.value, data, t.lexeme.data(), t.data() + t.length(), origin}
+//     {}
+// };
 
 
 #endif // SYNTAX

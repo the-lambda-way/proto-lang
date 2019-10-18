@@ -13,7 +13,7 @@
 #include <tuple>
 #include <variant>
 #include <vector>      // token list
-#include "../inclulde/scanner.h"
+#include "../include/scan_view.h"
 #include "../include/scanning-algorithms.h"
 #include "../include/syntax.h"
 #include "lox-common.h"
@@ -34,7 +34,7 @@ constexpr bool is_alpha_numeric (char c)    { return is_alpha(c) || is_digit(c);
 constexpr bool is_whitespace (char c)       { return c == ' ' || c == '\t' || c == '\r'; }
 
 
-lox_token identifier (scanner& s)
+lox_token identifier (scan_view& s)
 {
     while (is_alpha_numeric(*s))    ++s;
 
@@ -48,7 +48,7 @@ lox_token identifier (scanner& s)
 }
 
 
-lox_token number (scanner& s)
+lox_token number (scan_view& s)
 {
     while (is_digit(*s))    ++s;
 
@@ -63,7 +63,7 @@ lox_token number (scanner& s)
 }
 
 
-lox_token string (scanner& s)
+lox_token string (scan_view& s)
 {
     while (*s != '"' && s.has_more())    ++s;
 
@@ -79,7 +79,7 @@ lox_token string (scanner& s)
 // ---------------------------------------------------------------------------------------------------------------------
 std::vector<lox_token> scan_tokens (const std::string& source) {
     std::vector<lox_token> tokens;
-    scanner s {source};
+    scan_view s {source};
 
     while (!s.eof())
     {

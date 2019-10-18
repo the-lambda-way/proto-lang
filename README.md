@@ -59,12 +59,12 @@ std::string to_string (std::string_view s)    { return std::string {s.data(), s.
 
 ## Low-level
 
-A *scanner* type, which is provided in *scan_view.h*, combines a string view and iterator to manage the scanning of source code using traditional iterator semantics. It can be included as part of a custom scanner or parser, or used separately and passed between functions.
+A *scan_view* type, which is provided in *scan_view.h*, combines a string view and iterator to manage the scanning of source code using traditional iterator semantics. It can be included as part of a custom scanner or parser, or used separately and passed between functions.
 
 
 
 ```c++
-number_token number (scanner& s)
+number_token number (scan_view& s)
 {
     if (!is_digit(*s))    return none_token;
 

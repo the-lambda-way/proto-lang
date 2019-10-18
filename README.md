@@ -38,7 +38,7 @@ These examples demonstrate scanning and tokenizing a *number*, which is defined 
 
 The following definitions are used throughout the examples:
 
-```
+```c++
 #include <string>
 #include <variant>
 #include "../include/scanning-algorithms.h"
@@ -61,7 +61,7 @@ A *scanner* type, which is provided in *scanner.h*, combines a string view and i
 
 
 
-```
+```c++
 number_token number (scanner& s)
 {
     if (!is_digit(*s))    return none_token;

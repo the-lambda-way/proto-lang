@@ -1,1 +1,0 @@
-add_library(syntax syntax.cpp)

@@ -1,7 +1,5 @@
 // An implementation of the Lox language in C++
-// http://www.craftinginterpreters.com/scanning.html
-// http://www.craftinginterpreters.com/representing-code.html
-// https://github.com/munificent/craftinginterpreters/tree/master/java/com/craftinginterpreters/lox
+// http://www.craftinginterpreters.com
 
 #ifndef LOXLOWLEVEL
 #define LOXLOWLEVEL

@@ -5,6 +5,7 @@
 #include <variant>
 #include "../include/scanning-algorithms.h"
 #include "../include/scan_view.h"
+#include "../include/syntax.h"
 
 
 

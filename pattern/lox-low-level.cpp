@@ -5,11 +5,8 @@
 #define LOXLOWLEVEL
 
 #include <iostream>    // cout, getline
-#include <map>         // keywords
 #include <string>
 #include <string_view>
-#include <tuple>
-#include <variant>
 #include <vector>      // token list
 #include "../include/scan_view.h"
 #include "../include/scanning-algorithms.h"
@@ -17,7 +14,6 @@
 #include "lox-common.h"
 
 using std::string_view;
-using std::tuple;
 using namespace std::string_literals;
 using namespace std::string_view_literals;
 

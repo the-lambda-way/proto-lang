@@ -155,17 +155,17 @@ This example takes the last one step further and generates a tokenizer given a m
 
 
 ```c++
-scanner integer    = Scan::at_least(1, is_digit);
-scanner fractional = Scan::join('.', integer);
+matcher integer    = Match::at_least(1, is_digit);
+matcher fractional = Match::join('.', integer);
 
 number_token tokenize_int (string_view match)
 {
-    return {TokenType::INTEGER, std::stoi(match)};
+    return {TokenType::INTEGER, std::stoi(to_string(match))};
 };
 
 number_token tokenize_dec (string_view match)
 {
-    return {TokenType::DECIMAL, std::stod(match)};
+    return {TokenType::DECIMAL, std::stod(to_string(match))};
 };
 
 // Tokenize::incremental takes a list of pairs of scanners and functions

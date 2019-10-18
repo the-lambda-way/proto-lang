@@ -11,12 +11,12 @@
 // A non-owning reference to a character sequence, with iterator semantics.
 // Based on the design of string_view from GCC 9
 template <typename CharT, typename Traits = std::char_traits<CharT>>
-class basic_scanner
+class basic_scan_view
 {
     using iter_traits    = std::iterator_traits<const CharT*>;
     using container_type = std::basic_string_view<CharT, Traits>;
     using iterator_type  = scouting_iterator<typename iter_traits::pointer, container_type>;
-    using self_type      = basic_scanner<CharT, Traits>;
+    using self_type      = basic_scan_view<CharT, Traits>;
 
     container_type sequence;
     iterator_type  cursor;
@@ -45,19 +45,19 @@ public:
     // ------------------------
     // Initialization
     // ------------------------
-    constexpr basic_scanner () noexcept : sequence {}, cursor {} {}
+    constexpr basic_scan_view () noexcept : sequence {}, cursor {} {}
 
-    constexpr basic_scanner (const basic_scanner&) noexcept = default;
+    constexpr basic_scan_view (const basic_scan_view&) noexcept = default;
 
-    constexpr basic_scanner (container_type sequence) noexcept
+    constexpr basic_scan_view (container_type sequence) noexcept
         : sequence {sequence}, cursor {sequence.begin()}
     {}
 
-    constexpr basic_scanner (container_type sequence, iterator_type position) noexcept
+    constexpr basic_scan_view (container_type sequence, iterator_type position) noexcept
         : sequence {sequence}, cursor {position}
     {}
 
-    constexpr basic_scanner& operator= (const basic_scanner&) noexcept = default;
+    constexpr basic_scan_view& operator= (const basic_scan_view&) noexcept = default;
 
 
     // ------------------------
@@ -111,8 +111,8 @@ public:
 
     constexpr self_type& increment      ()                         { ++cursor;    return *this; }
     constexpr self_type& operator++     ()                         { ++cursor;    return *this; }
-    constexpr self_type  post_increment ()                         { return basic_scanner {sequence, cursor++}; }
-    constexpr self_type  operator++     (int)                      { return basic_scanner {sequence, cursor++}; }
+    constexpr self_type  post_increment ()                         { return basic_scan_view {sequence, cursor++}; }
+    constexpr self_type  operator++     (int)                      { return basic_scan_view {sequence, cursor++}; }
     constexpr self_type& advance        (difference_type n = 1)    { cursor += n; return *this; }
     constexpr self_type& operator+=     (difference_type n)        { cursor += n; return *this; }
     friend constexpr self_type operator+ (self_type s, difference_type n)    { return s += n; }
@@ -121,8 +121,8 @@ public:
 
     constexpr self_type& decrement      ()                         { --cursor;    return *this; }
     constexpr self_type& operator--     ()                         { --cursor;    return *this; }
-    constexpr self_type  post_decrement ()                         { return basic_scanner {sequence, cursor--}; }
-    constexpr self_type  operator--     (int)                      { return basic_scanner {sequence, cursor--}; }
+    constexpr self_type  post_decrement ()                         { return basic_scan_view {sequence, cursor--}; }
+    constexpr self_type  operator--     (int)                      { return basic_scan_view {sequence, cursor--}; }
     constexpr self_type& backtrack      (difference_type n = 1)    { cursor -= n; return *this; }
     constexpr self_type& operator-=     (difference_type n)        { cursor -= n; return *this; }
     friend constexpr self_type operator- (self_type s, difference_type n)    { return s -= n; }
@@ -152,15 +152,15 @@ public:
         return sequence.copy(dest, count, current_index() + cursor);
     }
 
-    std::string to_string (size_type cursor = 0, size_type count = npos) const noexcept
+    std::string to_string (size_type start = 0, size_type length = npos) const noexcept
     {
-        count = std::min(count, length());
-        return std::string {begin() + cursor, count};
+        count = std::min(length, this->length());
+        return {begin() + start, length};
     }
 
     std::string to_string (iterator first, iterator last)
     {
-        return std::string {first, last - first};
+        return {first, last - first};
     }
 
     // Returns a view of length "length" starting from the current position
@@ -188,41 +188,46 @@ public:
         return sequence.substr(base_index() + from_front, cursor.distance() - from_back);
     }
 
+    constexpr std::string copy_skipped (size_t from_front = 0, size_t from_back = 0)
+    {
+        return {begin() + from_front, end() - from_back};
+    }
+
 
 private:
     constexpr size_type current_index () const noexcept    { return cursor - sequence.begin();              }
     constexpr size_type base_index    () const noexcept    { return cursor.get_sentry() - sequence.begin(); }
 };
 
-using scanner = basic_scanner<char>;
+using scan_view = basic_scan_view<char>;
 
 
 // ------------------------
 // Predicates
 // ------------------------
 template <typename CharT, typename T>
-constexpr bool operator== (basic_scanner<CharT> s, T&& t)
+constexpr bool operator== (basic_scan_view<CharT> s, T&& t)
 {
     return starts_with(s, forward<T>(t));
 }
 
 
 template <typename T, typename CharT>
-constexpr bool operator== (T&& t, basic_scanner<CharT> s)
+constexpr bool operator== (T&& t, basic_scan_view<CharT> s)
 {
     return starts_with(s, forward<T>(t));
 }
 
 
 template <typename CharT, typename T>
-constexpr bool operator!= (basic_scanner<CharT> s, T&& t)
+constexpr bool operator!= (basic_scan_view<CharT> s, T&& t)
 {
     return !starts_with(s, forward<T>(t));
 }
 
 
 template <typename T, typename CharT>
-constexpr bool operator!= (T&& t, basic_scanner<CharT> s)
+constexpr bool operator!= (T&& t, basic_scan_view<CharT> s)
 {
     return !starts_with(s, forward<T>(t));
 }
@@ -232,7 +237,7 @@ constexpr bool operator!= (T&& t, basic_scanner<CharT> s)
 // Actions
 // ------------------------
 template <typename CharT>
-constexpr bool operator>> (basic_scanner<CharT>& s, char c)
+constexpr bool operator>> (basic_scan_view<CharT>& s, char c)
 {
     if (s != c)    return false;
     ++s;
@@ -241,7 +246,7 @@ constexpr bool operator>> (basic_scanner<CharT>& s, char c)
 
 
 template <typename CharT>
-constexpr bool operator>> (basic_scanner<CharT>& s, char_predicate p)
+constexpr bool operator>> (basic_scan_view<CharT>& s, char_predicate p)
 {
     if (p(*s))    return false;
     ++s;
@@ -250,7 +255,7 @@ constexpr bool operator>> (basic_scanner<CharT>& s, char_predicate p)
 
 
 template <typename CharT>
-constexpr bool operator>> (basic_scanner<CharT>& s, string_view literal)
+constexpr bool operator>> (basic_scan_view<CharT>& s, string_view literal)
 {
     s.update();
     if (!starts_with(&s.begin(), s.end(), literal))    return false;
@@ -260,7 +265,7 @@ constexpr bool operator>> (basic_scanner<CharT>& s, string_view literal)
 
 
 template <typename CharT, typename ScanExpr>
-constexpr bool operator>> (basic_scanner<CharT>& s, ScanExpr e)
+constexpr bool operator>> (basic_scan_view<CharT>& s, ScanExpr e)
 {
     return e(s);
 }

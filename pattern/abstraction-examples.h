@@ -4,7 +4,7 @@
 #include <string>
 #include <variant>
 #include "../include/scanning-algorithms.h"
-#include "../include/scanner.h"
+#include "../include/scan_view.h"
 
 
 
@@ -30,7 +30,7 @@ std::string to_string (std::string_view s)    { return std::string {s.data(), s.
 namespace PointerExample
 {
 
-number_token number (scanner& s)
+number_token number (scan_view& s)
 {
     if (!is_digit(*s))    return none_token;
 
@@ -49,7 +49,7 @@ number_token number (scanner& s)
     return {TokenType::DECIMAL, std::stod(match)};
 }
 
-// Add number to your custom scanner
+// Add number to your custom parser
 
 } // namespace PointerExample
 
@@ -60,7 +60,7 @@ number_token number (scanner& s)
 namespace AlgorithmExample
 {
 
-number_token number2 (scanner& s)
+number_token number2 (scan_view& s)
 {
     s.save();
 
@@ -68,13 +68,13 @@ number_token number2 (scanner& s)
     if (!advance_if(s, is_digit))    return none_token;
     advance_while(s, is_digit);
 
-    if (s != '.' || !is_digit(s[1]))    return {TokenType::INTEGER, std::stoi(s.to_string())};
+    if (s != '.' || !is_digit(s[1]))    return {TokenType::INTEGER, std::stoi(s.copy_skipped())};
 
     // Decimal
     s += 2;
     advance_while(s, is_digit);
 
-    return {TokenType::DECIMAL, std::stod(s.to_string())};
+    return {TokenType::DECIMAL, std::stod(s.copy_skipped())};
 }
 
 // add number2 to your custom parser
@@ -91,7 +91,7 @@ namespace AlgorithmSugarExample
 // To use unary operators (like Kleene star *), a function must be converted to a scanning_expression
 scanning_expression digit {is_digit};
 
-number_token number3 (scanner& s)
+number_token number3 (scan_view& s)
 {
     s.save();
 
@@ -99,13 +99,13 @@ number_token number3 (scanner& s)
     if (!(s >> digit))    return none_token;
     s >> *digit;
 
-    if (s != '.' || !is_digit(s[1]))    return {TokenType::INTEGER, std::stoi(s.to_string())};
+    if (s != '.' || !is_digit(s[1]))    return {TokenType::INTEGER, std::stoi(s.copy_skipped())};
 
     // Decimal
     s += 2;
     s >> *digit;
 
-    return {TokenType::DECIMAL, std::stod(s.to_string())};
+    return {TokenType::DECIMAL, std::stod(s.copy_skipped())};
 }
 
 // add number3 to your custom parser
@@ -122,13 +122,13 @@ namespace HigherOrderExample
 scanner integer    = Scan::at_least(1, is_digit);
 scanner fractional = Scan::join('.', integer);
 
-number_token number4 (scanner& s)
+number_token number4 (scan_view& s)
 {
     auto match_int = match_when(s, integer);
     if (!match_int)    return none_token;
 
     auto match_frac = match_when(s, fractional);
-    if (!match_frac)    return {TokenType::INTEGER, std::stoi(match_int.value())};
+    if (!match_frac)    return {TokenType::INTEGER, std::stoi(to_string(match_int.value()))};
 
     double val = std::stod(to_string(match_int.value()) + to_string(match_frac.value()));
     return {TokenType::DECIMAL, val};
@@ -207,7 +207,7 @@ scanner fractional = Scan::join('.', integer);
 
 struct number6 : AddRule<MyLang, number6>
 {
-    parse_tree parse (scanner& s)    { return match_impl(s); }
+    parse_tree parse (scan_view& s)    { return match_impl(s); }
 
     token action (parse_tree match)
     {

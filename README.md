@@ -23,10 +23,10 @@ I've been using the Lox language (*http://www.craftinginterpreters.com*) as a te
 
 A goal of this library is to be widely applicable while remaining useable. I've identified four levels of abstraction which I think provide a high degree of flexibility, and assists in incrementally improving code over time. These are
 
-* *low-level*, which requires explicitly handling every customization point or parameter of a function, as well as memory layout;
-* *mid-level*, which combines existing algorithms and predefined structures or other language constructs to compose useful abstractions;
-* *high-level*, which uses declarative-style code with minimal manual memory management; and
-* *domain-level*, which is often supplied as a DSL imposing a set of constraints which isolate contextually meaningful semantics, and providing improved syntax.
+* *low-level*, which micromanages details, is responsible for memory layout, and relies on imperative control flow mechanisms
+* *high-level*, which hides details behind encapsulations of various types, control flow managed through function composition
+* *declarative*, which minimizes control flow and memory management through declarative-style code, providing tailor-made objects with configurable options
+* *domain-level*, which is often supplied as a DSL imposing a set of constraints which isolate contextually meaningful semantics, and providing improved syntax
 
 These four layers are explored below with examples, which will serve as the initial introduction to the Pattern library.
 
@@ -34,15 +34,17 @@ These four layers are explored below with examples, which will serve as the init
 
 # Pattern Library
 
-These examples demonstrate scanning and tokenizing a *number*, which is defined as either an *integer* or a *decimal*. An integer here is defined as a sequence of digits, and a decimal as an integer, followed by '.', followed by an integer. We'll also showcase incrementally tokenizing both integers and decimals in the same function.
+These examples demonstrate scanning and tokenizing a number, which is defined as either an integer or a decimal. An integer here is defined as a sequence of digits, and a decimal as an integer, followed by '.', followed by an integer. We'll also showcase incrementally tokenizing both integers and decimals in the same function.
 
 The following definitions are used throughout the examples:
 
-```
+
+
+```c++
 #include <string>
 #include <variant>
 #include "../include/scanning-algorithms.h"
-#include "../include/scanner.h"
+#include "../include/scan_view.h"
 
 enum class TokenType    { INTEGER, DECIMAL, NONE };
 using number_token = token<TokenType, std::variant<std::monostate, int, double>>;
@@ -57,12 +59,12 @@ std::string to_string (std::string_view s)    { return std::string {s.data(), s.
 
 ## Low-level
 
-A *scanner* type, which is provided in *scanner.h*, combines a string view and iterator to manage the scanning of source code using traditional iterator semantics. It can be included as part of a custom parser, or used separately and passed between functions.
+A *scanner* type, which is provided in *scan_view.h*, combines a string view and iterator to manage the scanning of source code using traditional iterator semantics. It can be included as part of a custom scanner or parser, or used separately and passed between functions.
 
 
 
-```
-number_token number (scanner& s)
+```c++
+number_token number (scan_view& s)
 {
     if (!is_digit(*s))    return none_token;
 
@@ -81,8 +83,130 @@ number_token number (scanner& s)
     return {TokenType::DECIMAL, std::stod(match)};
 }
 
-// Add number to your custom scanner
+// Add number to your custom parser
 ```
+
+
+
+## High-level
+
+The *save()* member of the scan_view class provides a simple mechanism to backtrack or obtain the characters of a successful parse. The first example copied matching characters one by one into a string. This example uses *s.copy_skipped()* to return the string from the last save to the current position.
+
+Iteration has been replaced here with algorithms.
+
+
+
+```c++
+number_token number2 (scan_view& s)
+{
+    s.save();
+
+    // Integer
+    if (!advance_if(s, is_digit))    return none_token;
+    advance_while(s, is_digit);
+
+    if (s != '.' || !is_digit(s[1]))    return {TokenType::INTEGER, std::stoi(s.copy_skipped())};
+
+    // Decimal
+    s += 2;
+    advance_while(s, is_digit);
+
+    return {TokenType::DECIMAL, std::stod(s.copy_skipped())};
+}
+
+// add number2 to your custom parser
+```
+
+
+
+## Declarative-level
+
+Higher-order functions can be used to generate scanning and parsing functions for you. The next example creates matchers which return an optional string_view if the match is successful.
+
+(Implementation hasn't been pushed yet, but is mostly done.)
+
+
+
+```c++
+scanner integer    = Scan::at_least(1, is_digit);
+scanner fractional = Scan::join('.', integer);
+
+number_token number4 (scan_view& s)
+{
+    auto match_int = match_when(s, integer);
+    if (!match_int)    return none_token;
+
+    auto match_frac = match_when(s, fractional);
+    if (!match_frac)    return {TokenType::INTEGER, std::stoi(to_string(match_int.value()))};
+
+    double val = std::stod(to_string(match_int.value()) + to_string(match_frac.value()));
+    return {TokenType::DECIMAL, val};
+}
+
+// add number4 to your custom parser
+```
+
+
+
+This example takes the last one step further and generates a tokenizer given a matcher and tokenization algorithm. The tokenizer would then be passed a scan_view and return an optional token.
+
+(Not yet implemented.)
+
+
+
+```
+scanner integer    = Scan::at_least(1, is_digit);
+scanner fractional = Scan::join('.', integer);
+
+number_token tokenize_int (string_view match)
+{
+    return {TokenType::INTEGER, std::stoi(match)};
+};
+
+number_token tokenize_dec (string_view match)
+{
+    return {TokenType::DECIMAL, std::stod(match)};
+};
+
+// Tokenize::incremental takes a list of pairs of scanners and functions
+tokenizer number5 = Tokenize::incremental({integer,    tokenize_int},
+                                          {fractional, tokenize_dec});
+                                          
+// add number5 to your custom parser
+```
+
+
+
+## DSL
+
+Eventually a grammar will be added to the library as well, for traditional DSL creation. The main benefits of using a grammar is that scanning and parsing is handled for you.
+
+(Not yet implemented.)
+
+
+
+```
+rule digit   = GrammarExp >> '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9';
+rule integer = *digit;
+rule decimal = integer, '.', integer;
+
+number_token tokenize_int (string_view match)
+{
+    return {TokenType::INTEGER, std::stoi(match)};
+};
+
+number_token tokenize_dec (string_view match)
+{
+    return {TokenType::DECIMAL, std::stod(match)};
+};
+
+Language myLang;
+myLang.add_rule(integer, tokenize_int);
+myLang.add_rule(decimal, tokenize_dec);
+// Note, incremental parsing is handled automatically when rules are added
+```
+
+
 
 
 

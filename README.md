@@ -38,8 +38,6 @@ These examples demonstrate scanning and tokenizing a number, which is defined as
 
 The following definitions are used throughout the examples:
 
-
-
 ```c++
 #include <string>
 #include <variant>
@@ -64,7 +62,7 @@ A *scanner* type, which is provided in *scan_view.h*, combines a string view and
 
 
 ```c++
-number_token number (scan_view& s)
+number_token number (scanner& s)
 {
     if (!is_digit(*s))    return none_token;
 
@@ -154,7 +152,7 @@ This example takes the last one step further and generates a tokenizer given a m
 
 
 
-```
+```c++
 scanner integer    = Scan::at_least(1, is_digit);
 scanner fractional = Scan::join('.', integer);
 
@@ -171,7 +169,7 @@ number_token tokenize_dec (string_view match)
 // Tokenize::incremental takes a list of pairs of scanners and functions
 tokenizer number5 = Tokenize::incremental({integer,    tokenize_int},
                                           {fractional, tokenize_dec});
-                                          
+
 // add number5 to your custom parser
 ```
 
@@ -185,7 +183,7 @@ Eventually a grammar will be added to the library as well, for traditional DSL c
 
 
 
-```
+```c++
 rule digit   = GrammarExp >> '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9';
 rule integer = *digit;
 rule decimal = integer, '.', integer;

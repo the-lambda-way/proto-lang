@@ -43,6 +43,8 @@ The following definitions are used throughout the examples:
 #include <variant>
 #include "../include/scanning-algorithms.h"
 #include "../include/scan_view.h"
+#include "../include/syntax.h"
+
 
 enum class TokenType    { INTEGER, DECIMAL, NONE };
 using number_token = token<TokenType, std::variant<std::monostate, int, double>>;

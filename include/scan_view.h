@@ -37,7 +37,7 @@ public:
     using iterator               = const_iterator;
     using const_reverse_iterator = std::reverse_iterator<const_iterator>;
     using reverse_iterator       = const_reverse_iterator;
-    using size_type		         = size_t;
+    using size_type		         = difference_type;
 
     static constexpr size_type npos = size_type(-1);
 
@@ -63,14 +63,13 @@ public:
     // ------------------------
     // Relative Iterators
     // ------------------------
-    constexpr const_iterator get     () const noexcept    { return cursor.get();   }
-    constexpr const_iterator begin   () const noexcept    { return cursor.get();   }
+    constexpr const_iterator begin   () const noexcept    { return cursor.base();  }
     constexpr const_iterator end     () const noexcept    { return sequence.end(); }
-    constexpr const_iterator cbegin  () const noexcept    { return cursor.get();   }
+    constexpr const_iterator cbegin  () const noexcept    { return cursor.base();  }
     constexpr const_iterator cend    () const noexcept    { return sequence.end(); }
-    constexpr const_iterator rbegin  () const noexcept    { return const_reverse_iterator {cursor.get()};   }
+    constexpr const_iterator rbegin  () const noexcept    { return const_reverse_iterator {cursor.base()};  }
     constexpr const_iterator rend    () const noexcept    { return const_reverse_iterator {sequence.end()}; }
-    constexpr const_iterator crbegin () const noexcept    { return const_reverse_iterator {cursor.get()};   }
+    constexpr const_iterator crbegin () const noexcept    { return const_reverse_iterator {cursor.base()};  }
     constexpr const_iterator crend   () const noexcept    { return const_reverse_iterator {sequence.end()}; }
 
 
@@ -85,8 +84,8 @@ public:
     // ------------------------
     // Relative Element Access
     // ------------------------
-    constexpr const_pointer base () const noexcept    { return sequence.data(); }
-    constexpr const_pointer data () const noexcept    { return cursor.data(); }
+    constexpr const_pointer basis () const noexcept    { return sequence.data(); }
+    constexpr const_pointer data  () const noexcept    { return cursor.data(); }
 
     constexpr value_type operator[] (size_type n) const noexcept
     {
@@ -154,8 +153,8 @@ public:
 
     std::string to_string (size_type start = 0, size_type length = npos) const noexcept
     {
-        count = std::min(length, this->length());
-        return {begin() + start, length};
+        length = std::min(length, this->length());
+        return {cursor.data() + start, length};
     }
 
     std::string to_string (iterator first, iterator last)
@@ -183,14 +182,14 @@ public:
 
     // Returns a view of characters from the last saved position to the current position, shrinking by from_front and
     // from_back
-    constexpr container_type skipped (size_t from_front = 0, size_t from_back = 0)
+    constexpr container_type skipped (size_type from_front = 0, size_type from_back = 0)
     {
         return sequence.substr(base_index() + from_front, cursor.distance() - from_back);
     }
 
-    constexpr std::string copy_skipped (size_t from_front = 0, size_t from_back = 0)
+    constexpr std::string copy_skipped (size_type from_front = 0, size_type from_back = 0)
     {
-        return {begin() + from_front, end() - from_back};
+        return {cursor.saved_data() + from_front, cursor.data() - from_back};
     }
 
 

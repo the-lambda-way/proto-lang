@@ -210,7 +210,7 @@ struct token_lex
     const std::basic_string_view<CharT> lexeme;
 
     constexpr token_lex (TagType tag)
-        : tag {tag}, value {std::monostate{}}, lexeme {}
+        : tag {tag}, value {}, lexeme {}
     {}
 
     constexpr token_lex (TagType tag, ValueType value)

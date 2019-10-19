@@ -172,7 +172,7 @@ std::string to_string (const lox_token_value v)
 template <typename CharT>
 std::string to_string (const lox_token t, const CharT* data)
 {
-    std::string msg = to_string(t.type);
+    std::string msg = to_string(t.tag);
     pad_right(msg, TOKEN_STRING_PAD_LENGTH);
 
     msg += to_string(t.file_position(data)) + "\t: "
@@ -206,15 +206,15 @@ public:
     }
 
 
-    void error (scanner s, std::string message)
+    void error (scan_view s, std::string message)
     {
-        report({s.base(), s.data()}, "", message);
+        report({s.basis(), s.data()}, "", message);
     }
 
 
-    void error (scanner s, string_view lexeme, std::string message)
+    void error (scan_view s, string_view lexeme, std::string message)
     {
-        report({s.base(), s.data()}, lexeme, message);
+        report({s.basis(), s.data()}, lexeme, message);
     }
 
 

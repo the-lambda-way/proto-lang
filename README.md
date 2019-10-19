@@ -148,7 +148,7 @@ number_token number4 (scan_view& s)
 
 
 
-This example takes the last one step further and generates a tokenizer given a matcher and tokenization algorithm. The tokenizer would then be passed a scan_view and return an optional token.
+The next example takes the last one step further and generates a tokenizer given a matcher and tokenization algorithm. The tokenizer would then be passed a scan_view and return an optional token.
 
 (Not yet implemented.)
 

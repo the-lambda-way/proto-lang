@@ -157,10 +157,40 @@ constexpr bool advance_while (InputIt& first, InputIt last, string_view literal)
 }
 
 
+
+
+// Ranges wont work for these, because they take the address of an iterator, and you cannot
+// assume that the range returns a reference from r.begin()
+// However, an overload for scan_view would work. Place in scan_view.h
+
+
 template <typename Range, typename T>
 constexpr bool advance_while (Range& r, T t)
 {
     return advance_while(&r.begin(), r.end(), t);
+}
+
+
+template <typename InputIt>
+constexpr bool advance_while_not (InputIt& first, InputIt last, char c)
+{
+    while (!starts_with(first, last, c))    ++first;
+    return true;
+}
+
+
+template <typename InputIt>
+constexpr bool advance_while_not (InputIt& first, InputIt last, char_predicate p)
+{
+    while (!starts_with(first, last, p))    ++first;
+    return true;
+}
+
+
+template <typename Range, typename T>
+constexpr bool advance_while_not (Range& r, T t)
+{
+    return advance_while_not(&r.begin(), r.end(), t);
 }
 
 

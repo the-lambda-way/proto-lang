@@ -32,13 +32,12 @@ lox_token identifier (scan_view& s)
 {
     while (is_alpha_numeric(*s))    ++s;
 
-    // See if the identifier is a reserved word.
-    std::string match = to_string(s.skipped());
+    string_view match = s.skipped();
 
-    auto keyword = keywords.find(match);
+    auto keyword = keywords.find(to_string(match));
 
-    if   (keyword == keywords.end())    return {TokenType::IDENTIFIER, match, s.skipped()};
-    else                                return {keyword->second, empty, s.skipped()};
+    if (keyword != keywords.end())    return {keyword->second, empty, match};
+    else                              return {TokenType::IDENTIFIER, match, match};
 }
 
 
@@ -52,7 +51,7 @@ lox_token number (scan_view& s)
         while (is_digit(*s))    ++s;
     }
 
-    double val = std::stod(to_string(s.skipped()));
+    double val = std::stod(s.copy_skipped());
     return {TokenType::NUMBER, val, s.skipped()};
 }
 

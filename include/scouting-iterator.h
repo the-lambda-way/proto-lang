@@ -74,12 +74,13 @@ public:
         return *this;
     }
 
+    constexpr const Iter& base       () const noexcept    { return scout;  }
     constexpr const Iter& get_sentry () const noexcept    { return sentry; }
     constexpr const Iter& get_scout  () const noexcept    { return scout;  }
     constexpr const Iter& begin      () const noexcept    { return sentry; }
     constexpr const Iter& end        () const noexcept    { return scout;  }
-    constexpr const Iter& data       () const noexcept    { return scout;  }
-    constexpr const Iter& base       () const noexcept    { return scout;  }
+    constexpr const value_type* saved_data () const noexcept    { return &(*sentry); }
+    constexpr const value_type* data       () const noexcept    { return &(*scout); }
 
 
     // Operations
@@ -140,86 +141,72 @@ public:
         return self_type {scout - n};
     }
 
-    template <typename _Iter>
-    difference_type operator- (const _Iter& i) const noexcept
+    difference_type operator- (const Iter& i) const noexcept
     {
         return scout - i;
     }
 
-    template <typename _Iter>
-    friend difference_type operator- (const _Iter& lhs, const self_type& rhs) noexcept
+    friend difference_type operator- (const Iter& lhs, const self_type& rhs) noexcept
     {
         return lhs - rhs.base();
     }
 
-    template <typename _Iter>
-    bool operator== (const _Iter& i) const noexcept
+    bool operator== (const Iter& i) const noexcept
     {
         return scout == i;
     }
 
-    template <typename _Iter>
-    friend bool operator== (const _Iter& lhs, const self_type& rhs) noexcept
+    friend bool operator== (const Iter& lhs, const self_type& rhs) noexcept
     {
         return lhs == rhs.base();
     }
 
-    template <typename _Iter>
-    bool operator!= (const _Iter& i) const noexcept
+    bool operator!= (const Iter& i) const noexcept
     {
         return scout != i;
     }
 
-    template <typename _Iter>
-    friend bool operator!= (const _Iter& lhs, const self_type& rhs) noexcept
+    friend bool operator!= (const Iter& lhs, const self_type& rhs) noexcept
     {
         return lhs != rhs.base();
     }
 
-    template <typename _Iter>
-    bool operator< (const _Iter& i) const noexcept
+    bool operator< (const Iter& i) const noexcept
     {
         return scout < i;
     }
 
-    template <typename _Iter>
-    friend bool operator< (const _Iter& lhs, const self_type& rhs) noexcept
+    friend bool operator< (const Iter& lhs, const self_type& rhs) noexcept
     {
         return lhs < rhs.base();
     }
 
-    template <typename _Iter>
-    bool operator<= (const _Iter& i) const noexcept
+    bool operator<= (const Iter& i) const noexcept
     {
         return scout <= i;
     }
 
-    template <typename _Iter>
-    friend bool operator<= (const _Iter& lhs, const self_type& rhs) noexcept
+    friend bool operator<= (const Iter& lhs, const self_type& rhs) noexcept
     {
         return lhs <= rhs.base();
     }
 
-    template <typename _Iter>
-    bool operator> (const _Iter& i) const noexcept
+    bool operator> (const Iter& i) const noexcept
     {
         return scout > i;
     }
 
-    template <typename _Iter>
-    friend bool operator> (const _Iter& lhs, const self_type& rhs) noexcept
+    friend bool operator> (const Iter& lhs, const self_type& rhs) noexcept
     {
         return lhs > rhs.base();
     }
 
-    template <typename _Iter>
-    bool operator>= (const _Iter& i) const noexcept
+    bool operator>= (const Iter& i) const noexcept
     {
         return scout >= i;
     }
 
-    template <typename _Iter>
-    friend bool operator>= (const _Iter& lhs, const self_type& rhs) noexcept
+    friend bool operator>= (const Iter& lhs, const self_type& rhs) noexcept
     {
         return lhs >= rhs.base();
     }

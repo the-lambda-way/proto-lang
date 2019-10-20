@@ -19,6 +19,8 @@ If you feel like chatting, feel free to stop on by the Discord server (https://d
 
 Since syntax manipulation is a core part of the language, it is important to have a robust set of parsing tools to build upon. The beginning of these tools are found in the *pattern* folder (working name of the parser tools library).
 
+Once these tools are developed to a sufficient point, they will be used to bootstrap the syntax of the proto language.
+
 I've been using the Lox language (*http://www.craftinginterpreters.com*) as a test bed for the library's features. An implementation of the language in plain C++ is found in the file *lox-text.cpp*. At this point it tokenizes a portion of the language (up to chapter 4 of the *Crafting Interpreters* book).
 
 A goal of this library is to be widely applicable while remaining useable. I've identified four levels of abstraction which I think provide a high degree of flexibility, and assists in incrementally improving code over time. These are

@@ -1,8 +1,8 @@
 // An implementation of the Lox language in C++
 // http://www.craftinginterpreters.com
 
-#ifndef LOXLOWLEVEL
-#define LOXLOWLEVEL
+#ifndef LOXALGORITHMS
+#define LOXALGORITHMS
 
 #include <iostream>    // cout, getline
 #include <string>

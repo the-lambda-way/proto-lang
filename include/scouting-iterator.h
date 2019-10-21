@@ -74,13 +74,14 @@ public:
         return *this;
     }
 
-    constexpr const Iter& base       () const noexcept    { return scout;  }
-    constexpr const Iter& get_sentry () const noexcept    { return sentry; }
-    constexpr const Iter& get_scout  () const noexcept    { return scout;  }
-    constexpr const Iter& begin      () const noexcept    { return sentry; }
-    constexpr const Iter& end        () const noexcept    { return scout;  }
-    constexpr const value_type* saved_data () const noexcept    { return &(*sentry); }
-    constexpr const value_type* data       () const noexcept    { return &(*scout); }
+    constexpr Iter  get_sentry  () const noexcept    { return sentry; }
+    constexpr Iter  get_scout   () const noexcept    { return scout;  }
+    constexpr Iter& sentry_base ()       noexcept    { return sentry; }
+    constexpr Iter& base        ()       noexcept    { return scout;  }
+    constexpr Iter  begin       () const noexcept    { return sentry; }
+    constexpr Iter  end         () const noexcept    { return scout;  }
+    constexpr const value_type* saved_data () const noexcept    { return &*sentry; }
+    constexpr const value_type* data       () const noexcept    { return &*scout; }
 
 
     // Operations

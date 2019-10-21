@@ -7,6 +7,9 @@
 #include "../include/scanning-algorithms.h"
 #include "../include/syntax.h"
 
+using std::forward;
+using std::string_view;
+
 
 // A non-owning reference to a character sequence, with iterator semantics.
 // Based on the design of string_view from GCC 9
@@ -37,6 +40,7 @@ public:
     using iterator               = const_iterator;
     using const_reverse_iterator = std::reverse_iterator<const_iterator>;
     using reverse_iterator       = const_reverse_iterator;
+    using sentinel_t             = container_type::iterator;
     using size_type		         = difference_type;
 
     static constexpr size_type npos = size_type(-1);
@@ -64,13 +68,14 @@ public:
     // Relative Iterators
     // ------------------------
     constexpr const_iterator begin   () const noexcept    { return cursor.base();  }
-    constexpr const_iterator end     () const noexcept    { return sequence.end(); }
+    constexpr sentinel_t     end     () const noexcept    { return sequence.end(); }
     constexpr const_iterator cbegin  () const noexcept    { return cursor.base();  }
-    constexpr const_iterator cend    () const noexcept    { return sequence.end(); }
+    constexpr sentinel_t     cend    () const noexcept    { return sequence.end(); }
     constexpr const_iterator rbegin  () const noexcept    { return const_reverse_iterator {cursor.base()};  }
-    constexpr const_iterator rend    () const noexcept    { return const_reverse_iterator {sequence.end()}; }
+    constexpr sentinel_t     rend    () const noexcept    { return const_reverse_iterator {sequence.end()}; }
     constexpr const_iterator crbegin () const noexcept    { return const_reverse_iterator {cursor.base()};  }
-    constexpr const_iterator crend   () const noexcept    { return const_reverse_iterator {sequence.end()}; }
+    constexpr sentinel_t     crend   () const noexcept    { return const_reverse_iterator {sequence.end()}; }
+
 
 
     // ------------------------
@@ -193,95 +198,163 @@ public:
     }
 
 
+    // ------------------------
+    // Algorithms
+    // ------------------------
+    template <typename T>
+    friend constexpr bool advance_if (basic_scan_view<CharT>& s, T&& t)
+    {
+        return advance_if(s.cursor.base(), s.end(), forward<T>(t));
+    }
+
+
+    template <typename T>
+    friend constexpr bool advance_if_not (basic_scan_view<CharT>& s, T&& t)
+    {
+        return advance_if_not(s.cursor.base(), s.end(), forward<T>(t));
+    }
+
+
+    template <typename T>
+    friend constexpr bool advance_optionally (basic_scan_view<CharT>& s, T&& t)
+    {
+        return advance_optionally(s.cursor.base(), s.end(), forward<T>(t));
+    }
+
+
+    template <typename T>
+    friend constexpr bool advance_while (basic_scan_view<CharT>& s, T&& t)
+    {
+        return advance_while(s.cursor.base(), s.end(), forward<T>(t));
+    }
+
+
+    template <typename T>
+    friend constexpr bool advance_while_not (basic_scan_view<CharT>& s, T&& t)
+    {
+        return advance_while_not(s.cursor.base(), s.end(), forward<T>(t));
+    }
+
+
+    template <typename T>
+    friend constexpr bool advance_max_if (basic_scan_view<CharT>& s, T&& t, size_t max = -1)
+    {
+        return advance_max_if(s.cursor.base(), s.end(), forward<T>(t), max);
+    }
+
+
+    template <typename T>
+    friend constexpr bool advance_n_if (basic_scan_view<CharT>& s, T&& t, size_t n)
+    {
+        return advance_n_if(s.cursor.base(), s.end(), forward<T>(t), n);
+    }
+
+
+    template <typename T>
+    friend constexpr bool advance_min_if (basic_scan_view<CharT>& s, T&& t, size_t min = 0)
+    {
+        return advance_min_if(s.cursor.base(), s.end(), forward<T>(t), min);
+    }
+
+
+    template <typename T>
+    friend constexpr bool advance_min_if (basic_scan_view<CharT>& s, T&& t, size_t min = 0, size_t max = -1)
+    {
+        return advance_min_if(s.cursor.base(), s.end(), forward<T>(t), min, max);
+    }
+
+
+    template <typename T>
+    friend constexpr bool advance_to_if_found (basic_scan_view<CharT>& s, T&& t)
+    {
+        return advance_if_found(s.cursor.base(), s.end(), forward<T>(t));
+    }
+
+
+    template <typename T>
+    friend constexpr bool advance_past_if_found (basic_scan_view<CharT>& s, T&& t)
+    {
+        return advance_past_if_found(s.cursor.base(), s.end(), forward<T>(t));
+    }
+
+
+    template <typename... Exp>
+    friend constexpr bool advance_if_any (basic_scan_view<CharT>& s, Exp... e)
+    {
+        return advance_if_any(s.cursor.base(), s.end(), e...);
+    }
+
+
+    template <typename... Exp>
+    friend constexpr bool advance_joined_if (basic_scan_view<CharT>& s, Exp... e)
+    {
+        return advance_joined(s.cursor.base(), s.end(), e...);
+    }
+
+
+    // ------------------------
+    // Syntactic Sugar
+    // ------------------------
+    // Note: taking any template parameter will catch iterator equality as well, which is the wrong behavior.
+    constexpr bool operator== (char c)
+    {
+        return starts_with(cursor.base(), end(), c);
+    }
+
+
+    template <typename _CharT>
+    friend constexpr bool operator== (char c, basic_scan_view<_CharT>& s)
+    {
+        return starts_with(s.cursor.base(), s.end(), c);
+    }
+
+
+    constexpr bool operator== (char_predicate p)
+    {
+        return starts_with(cursor.base(), end(), p);
+    }
+
+
+    template <typename _CharT>
+    friend constexpr bool operator== (char_predicate p, basic_scan_view<_CharT>& s)
+    {
+        return starts_with(s.cursor.base(), s.end(), p);
+    }
+
+
+    constexpr bool operator== (string_view literal)
+    {
+        return starts_with(cursor.base(), end(), literal);
+    }
+
+
+    template <typename _CharT>
+    friend constexpr bool operator== (string_view literal, basic_scan_view<_CharT>& s)
+    {
+        return starts_with(s.cursor.base(), s.end(), literal);
+    }
+
+
+    template <typename T>
+    constexpr bool operator!= (T&& t)
+    {
+        return !starts_with(cursor.base(), end(), forward<T>(t));
+    }
+
+
+    template <typename T, typename _CharT>
+    friend constexpr bool operator!= (T&& t, basic_scan_view<_CharT>& s)
+    {
+        return !starts_with(s.cursor.base(), s.end(), forward<T>(t));
+    }
+
+
 private:
     constexpr size_type current_index () const noexcept    { return cursor - sequence.begin();              }
     constexpr size_type base_index    () const noexcept    { return cursor.get_sentry() - sequence.begin(); }
 };
 
 using scan_view = basic_scan_view<char>;
-
-
-// ------------------------
-// Predicates
-// ------------------------
-template <typename CharT, typename T>
-constexpr bool operator== (basic_scan_view<CharT> s, T&& t)
-{
-    return starts_with(s, forward<T>(t));
-}
-
-
-template <typename T, typename CharT>
-constexpr bool operator== (T&& t, basic_scan_view<CharT> s)
-{
-    return starts_with(s, forward<T>(t));
-}
-
-
-template <typename CharT, typename T>
-constexpr bool operator!= (basic_scan_view<CharT> s, T&& t)
-{
-    return !starts_with(s, forward<T>(t));
-}
-
-
-template <typename T, typename CharT>
-constexpr bool operator!= (T&& t, basic_scan_view<CharT> s)
-{
-    return !starts_with(s, forward<T>(t));
-}
-
-
-// ------------------------
-// Actions
-// ------------------------
-template <typename CharT>
-constexpr bool operator>> (basic_scan_view<CharT>& s, char c)
-{
-    if (s != c)    return false;
-    ++s;
-    return true;
-}
-
-
-template <typename CharT>
-constexpr bool operator>> (basic_scan_view<CharT>& s, char_predicate p)
-{
-    if (p(*s))    return false;
-    ++s;
-    return true;
-}
-
-
-template <typename CharT>
-constexpr bool operator>> (basic_scan_view<CharT>& s, string_view literal)
-{
-    s.update();
-    if (!starts_with(&s.begin(), s.end(), literal))    return false;
-    s.update();
-    return true;
-}
-
-
-template <typename CharT, typename ScanExpr>
-constexpr bool operator>> (basic_scan_view<CharT>& s, ScanExpr e)
-{
-    return e(s);
-}
-
-
-    // operator>> is apply operator?
-
-
-    // Pattern language using expression templates
-    // operator^ repeat
-    // operator* kleene
-    // operator[] access
-    // operator< n min
-    // n < scanner min
-    // operator> n max
-    // n > scanner max
-    // operator== n count
 
 
 #endif // SCANNER

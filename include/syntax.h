@@ -11,61 +11,72 @@
  *
  **********************************************************************************************************************/
 
-
-struct source_location
+/**
+ * A position and span, designed for character sequences.
+ */
+struct source_position
 {
-    const size_t position;
-    const size_t span;
+    size_t position;
+    size_t span;
 
     template <typename CharT>
     constexpr std::basic_string_view<CharT> lexeme (CharT* data)    { return {data + position, span}; }
 
 
-    constexpr source_location (size_t position, size_t span)
+    constexpr source_position (size_t position, size_t span)
         : position {position}, span {span}
     {}
 
 
     template <typename CharT>
-    constexpr source_location (CharT* data, CharT* start, size_t span)
+    constexpr source_position (CharT* data, CharT* start, size_t span)
         : position {start - data}, span {span}
     {}
 
 
     template <typename CharT>
-    constexpr source_location (CharT* data, CharT* start, CharT* end)
+    constexpr source_position (CharT* data, CharT* start, CharT* end)
         : position {start - data}, span {end - start}
     {}
 
 
     template <typename CharT>
-    constexpr source_location (CharT* data, std::basic_string_view<CharT> lexeme)
+    constexpr source_position (CharT* data, std::basic_string_view<CharT> lexeme)
         : position {lexeme.begin() - data}, span {lexeme.length()}
     {}
 
 
     template <typename CharT>
-    constexpr source_location (std::basic_string_view<CharT> source, CharT* start, size_t span)
+    constexpr source_position (std::basic_string_view<CharT> source, CharT* start, size_t span)
         : position {start - source.begin()}, span {span}
     {}
 
 
     template <typename CharT>
-    constexpr source_location (std::basic_string_view<CharT> source, CharT* start, CharT* end)
+    constexpr source_position (std::basic_string_view<CharT> source, CharT* start, CharT* end)
         : position {start - source.begin()}, span {end - start}
 
     {}
 
 
     template <typename CharT>
-    constexpr source_location (std::basic_string_view<CharT> source, std::basic_string_view<CharT> lexeme)
+    constexpr source_position (std::basic_string_view<CharT> source, std::basic_string_view<CharT> lexeme)
         : position {lexeme.begin() - source.begin()}, span {lexeme.length()}
     {}
 };
 
 
-// based on http://insanecoding.blogspot.com/2011/11/how-to-read-in-file-in-c.html
-std::string get_file_contents (const std::string& path, size_t index = 0, size_t span = -1)
+/**
+ * Retrieve the contents of a file into a string.
+ *
+ * Based on http://insanecoding.blogspot.com/2011/11/how-to-read-in-file-in-c.html
+ *
+ * @param [in]    path          Pathname of the file to open
+ * @param [in]    start         Index to begin retrieving from
+ * @param [in]    span          Number of characters to retrieve
+ * @param [out]   std::string   Contents retrieved from file
+ */
+std::string get_file_contents (const std::string& path, size_t start = 0, size_t span = -1)
 {
     using namespace std;
 
@@ -76,91 +87,101 @@ std::string get_file_contents (const std::string& path, size_t index = 0, size_t
     // Allocate string memory
     std::string contents;
 
-    span = std::min(span, (size_t) file.tellg() - index);
+    span = std::min(span, (size_t) file.tellg() - start);
     contents.resize(span);
 
     // Read file contents into string
-    file.seekg(index);
+    file.seekg(start);
     file.read(contents.data(), span);
 
     return contents;
 }
 
 
-std::string get_file_contents (const std::string& path, source_location s)
+/**
+ * Retrieve the contents of a file into a string.
+ *
+ * @param [in]    path          Pathname of the file to open
+ * @param [in]    s             Position and span to retrieve from
+ * @param [out]   std::string   Contents retrieved from file
+ */
+std::string get_file_contents (const std::string& path, source_position s)
 {
     return get_file_contents (path, s.position, s.span);
 }
 
 
-struct file_position
+/**
+ * A line and column, designed for character sequences.
+ */
+struct source_location
 {
     int line;
     int column;
 
 
-    constexpr file_position (int line, int column)
+    constexpr source_location (int line, int column)
         : line {line}, column {column}
     {}
 
 
     template <typename CharT>
-    constexpr file_position (const CharT* data, const CharT* position)
+    constexpr source_location (const CharT* data, const CharT* position)
     {
         convert_from(data, position);
     }
 
 
     template <typename CharT>
-    constexpr file_position (const CharT* data, size_t position)
+    constexpr source_location (const CharT* data, size_t position)
     {
         convert_from(data, data + position);
     }
 
 
     template <typename CharT>
-    constexpr file_position (const CharT* data, std::basic_string_view<CharT> lexeme)
+    constexpr source_location (const CharT* data, std::basic_string_view<CharT> lexeme)
     {
         convert_from(data, lexeme.data());
     }
 
 
     template <typename CharT>
-    constexpr file_position (const CharT* data, source_location location)
+    constexpr source_location (const CharT* data, source_position srcpos)
     {
-        convert_from(data, data + location.position);
+        convert_from(data, data + srcpos.position);
     }
 
 
     template <typename CharT>
-    constexpr file_position (std::basic_string_view<CharT> source, CharT* position)
+    constexpr source_location (std::basic_string_view<CharT> source, CharT* position)
     {
         convert_from(source.data(), position);
     }
 
 
     template <typename CharT>
-    constexpr file_position (std::basic_string_view<CharT> source, size_t position)
+    constexpr source_location (std::basic_string_view<CharT> source, size_t position)
     {
         convert_from(source.data(), source.data() + position);
     }
 
 
     template <typename CharT>
-    constexpr file_position (std::basic_string_view<CharT> source, std::basic_string_view<CharT> lexeme)
+    constexpr source_location (std::basic_string_view<CharT> source, std::basic_string_view<CharT> lexeme)
     {
         convert_from(source.data(), lexeme.data());
     }
 
 
     template <typename CharT>
-    constexpr file_position (std::basic_string_view<CharT> source, source_location location)
+    constexpr source_location (std::basic_string_view<CharT> source, source_position srcpos)
     {
-        convert_from(source.data(), source.data() + location.position);
+        convert_from(source.data(), source.data() + srcpos.position);
     }
 
 
-    file_position (const char* path, int position)
+    source_location (const char* path, int position)
     {
         std::string source = get_file_contents(path, 0, position);
         convert_from(source.data(), source.data() + position);
@@ -188,10 +209,12 @@ private:
 };
 
 
+/**
+ * A simple token structure.
+ */
 template <typename TagType, typename ValueType>
-class token
+struct token
 {
-public:
     TagType   tag;
     ValueType value;
 
@@ -200,8 +223,12 @@ public:
 };
 
 
-// Holds a reference to source in order to view its lexeme and construct metadata when needed.
-// Recommended for use where access to token metadata is rare.
+/**
+ * A token combined with its lexeme, which can be used to construct location information.
+ *
+ * Metadata can be constructed when needed, so is recommended for use where access to token metadata is rare. The
+ * original source pointer must be supplied to calculate this information.
+ */
 template <typename TagType, typename ValueType, typename CharT = char>
 struct token_lex
 {
@@ -221,10 +248,10 @@ struct token_lex
         : tag {tag}, value {value}, lexeme {lexeme}
     {}
 
-    constexpr size_t          position      (const CharT* data) const    { return lexeme.data() - data; }
-    constexpr size_t          span          ()                  const    { return lexeme.length();      }
-    constexpr source_location location      (const CharT* data) const    { return {data, lexeme};       }
-    constexpr ::file_position file_position (const CharT* data) const    { return {data, lexeme};       }
+    constexpr size_t            position        (const CharT* data) const    { return lexeme.data() - data; }
+    constexpr size_t            span            ()                  const    { return lexeme.length();      }
+    constexpr ::source_position source_position (const CharT* data) const    { return {data, lexeme};       }
+    constexpr ::source_location source_location (const CharT* data) const    { return {data, lexeme};       }
 };
 
 
@@ -238,16 +265,16 @@ struct token_lex
 // {
 //     const TagType         tag;
 //     const ValueType       value;
-//     const source_location location;
-//     const ::file_position file_position;
+//     const source_position location;
+//     const ::source_location source_location;
 //     const CharT*          data;
 //     const std::string     origin;
 
 
 //     constexpr size_t position ()    { return location.position;    }
 //     constexpr size_t span     ()    { return location.span;        }
-//     constexpr int    line     ()    { return file_position.line;   }
-//     constexpr int    column   ()    { return file_position.column; }
+//     constexpr int    line     ()    { return source_location.line;   }
+//     constexpr int    column   ()    { return source_location.column; }
 
 //     constexpr std::basic_string_view<CharT> lexeme ()    { return {data + position(), span()}; }
 
@@ -258,7 +285,7 @@ struct token_lex
 //     constexpr token_loc () = default;
 
 //     constexpr token_loc (TagType tag, ValueType value, CharT* data, CharT* start, CharT* end, std::string origin)
-//         : tag {tag}, value {value}, location {data, start, end}, file_position {data, start}, data {data}, origin {origin}
+//         : tag {tag}, value {value}, location {data, start, end}, source_location {data, start}, data {data}, origin {origin}
 //     {}
 
 //     constexpr token_loc (token_lex<TagType, ValueType, CharT> t, CharT* data, std::string origin)

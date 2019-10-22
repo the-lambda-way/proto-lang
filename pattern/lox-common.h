@@ -158,9 +158,9 @@ std::string to_string (const std::monostate s)      { return "";                
 std::string to_string (const std::string s)         { return s;                      }
 std::string to_string (const std::string_view s)    { return {s.data(), s.length()}; }
 std::string to_string (const double d)              { return std::to_string(d);      }
-std::string to_string (const file_position p)
+std::string to_string (const source_location s)
 {
-    return "[" + std::to_string(p.line) + ", " + std::to_string(p.column) + "]";
+    return "[" + std::to_string(s.line) + ", " + std::to_string(s.column) + "]";
 }
 
 std::string to_string (const lox_token_value v)
@@ -175,7 +175,7 @@ std::string to_string (const lox_token t, const CharT* data)
     std::string msg = to_string(t.tag);
     pad_right(msg, TOKEN_STRING_PAD_LENGTH);
 
-    msg += to_string(t.file_position(data)) + "\t: "
+    msg += to_string(t.source_location(data)) + "\t: "
          + to_string(t.value);
 
     if (t.tag == TokenType::ERROR)    msg += " " + to_string(t.lexeme);
@@ -193,16 +193,16 @@ public:
     bool had_error         = false;
     bool had_runtime_error = false;
 
-    void report (file_position pos, string_view lexeme, std::string message)
+    void report (source_location s, string_view lexeme, std::string message)
     {
-        std::cout << "[at " << pos.line << ":" << pos.column << "] Error " << lexeme << ": " << message;
+        std::cout << "[at " << s.line << ":" << s.column << "] Error " << lexeme << ": " << message;
         had_error = true;
     }
 
 
-    void error (file_position pos, std::string message)
+    void error (source_location s, std::string message)
     {
-        report(pos, "", message);
+        report(s, "", message);
     }
 
 
@@ -218,9 +218,9 @@ public:
     }
 
 
-    void error (file_position pos, string_view lexeme, std::string message)
+    void error (source_location s, string_view lexeme, std::string message)
     {
-        report(pos, lexeme, message);
+        report(s, lexeme, message);
     }
 } lox_system;
 
@@ -243,7 +243,7 @@ void run (const std::string& source)
 
 void run_file (std::string path)
 {
-    std::string code = get_file_contents(path);
+    const std::string code = get_file_contents(path);
     run(code);
 
     if (lox_system.had_error)            exit(EXIT_FAILURE);

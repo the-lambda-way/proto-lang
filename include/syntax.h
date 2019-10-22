@@ -1,15 +1,23 @@
+/**
+ * @file
+ * @author Mike Castillo
+ *
+ * @section License
+ *
+ * Copyright (c) 2019 Mike Castillo. All rights reserved.
+ * Licensed under the MIT License. See the LICENSE file for full license information.
+ *
+ * @section Description
+ *
+ * Facilities for managing source code.
+ */
+
 #ifndef SYNTAX
 #define SYNTAX
 
 #include <fstream>    // get_file_contents
 #include <string>
 
-
-/***********************************************************************************************************************
- * Syntax Library
- * The Syntax Library provides abstractions for inspecting and managing source code.
- *
- **********************************************************************************************************************/
 
 /**
  * A position and span, designed for character sequences.
@@ -71,10 +79,10 @@ struct source_position
  *
  * Based on http://insanecoding.blogspot.com/2011/11/how-to-read-in-file-in-c.html
  *
- * @param [in]    path          Pathname of the file to open
- * @param [in]    start         Index to begin retrieving from
- * @param [in]    span          Number of characters to retrieve
- * @param [out]   std::string   Contents retrieved from file
+ * @param    path    Pathname of the file to open
+ * @param    start   Index to begin retrieving from
+ * @param    span    Number of characters to retrieve
+ * @return   Contents retrieved from file
  */
 std::string get_file_contents (const std::string& path, size_t start = 0, size_t span = -1)
 {
@@ -101,9 +109,9 @@ std::string get_file_contents (const std::string& path, size_t start = 0, size_t
 /**
  * Retrieve the contents of a file into a string.
  *
- * @param [in]    path          Pathname of the file to open
- * @param [in]    s             Position and span to retrieve from
- * @param [out]   std::string   Contents retrieved from file
+ * @param    path   Pathname of the file to open
+ * @param    s      Position and span to retrieve from
+ * @return   Contents retrieved from file
  */
 std::string get_file_contents (const std::string& path, source_position s)
 {

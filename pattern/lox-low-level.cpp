@@ -8,8 +8,8 @@
 #include <string>
 #include <string_view>
 #include <vector>      // token list
-#include "../include/scan_view.h"
-#include "../include/scanning-algorithms.h"
+#include "scan_view.h"
+#include "scanning-algorithms.h"
 #include "../include/syntax.h"
 #include "lox-common.h"
 

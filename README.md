@@ -25,10 +25,10 @@ I've been using the Lox language (*http://www.craftinginterpreters.com*) as a te
 
 A goal of this library is to be widely applicable while remaining useable. I've identified four levels of abstraction which I think provide a high degree of flexibility, and assists in incrementally improving code over time. These are
 
-* *low-level*, which micromanages details, is responsible for memory layout, and relies on imperative control flow mechanisms
-* *high-level*, which hides details behind encapsulations of various types, control flow managed through function composition
-* *declarative*, which minimizes control flow and memory management through declarative-style code, providing tailor-made objects with configurable options
-* *domain-level*, which is often supplied as a DSL imposing a set of constraints which isolate contextually meaningful semantics, and providing improved syntax
+* **low-level**, which micromanages details, is responsible for memory layout, and relies on imperative control flow mechanisms
+* **high-level**, which hides details behind encapsulations of various types, control flow managed through function composition
+* **declarative**, which minimizes control flow and memory management through declarative-style code, providing tailor-made objects with configurable options
+* **domain-level**, which is often supplied as a DSL imposing a set of constraints which isolate contextually meaningful semantics, and providing improved syntax
 
 These four layers are explored below with examples, which will serve as the initial introduction to the Pattern library.
 

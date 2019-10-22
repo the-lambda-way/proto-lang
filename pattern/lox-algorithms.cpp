@@ -1,4 +1,4 @@
-// An implementation of the Lox language in C++
+// An implementation of the Lox language using scanning algorithms
 // http://www.craftinginterpreters.com
 
 #ifndef LOXALGORITHMS
@@ -8,9 +8,9 @@
 #include <string>
 #include <string_view>
 #include <vector>      // token list
-#include "../include/scan_view.h"
-#include "../include/scanning-algorithms.h"
+#include "scan_view.h"
 #include "../include/syntax.h"
+#include "scanning-algorithms.h"
 #include "lox-common.h"
 
 using std::string_view;

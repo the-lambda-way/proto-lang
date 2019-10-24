@@ -369,7 +369,7 @@ constexpr bool advance_while (mutable_range& r, T t)
 template <typename InputIt, typename Sentinel>
 constexpr bool advance_while_not (InputIt& first, Sentinel last, char c)
 {
-    while (!starts_with(first, last, c))    ++first;
+    while (first < last && *first != c)    ++first;
     return true;
 }
 
@@ -385,7 +385,7 @@ constexpr bool advance_while_not (InputIt& first, Sentinel last, char c)
 template <typename InputIt, typename Sentinel>
 constexpr bool advance_while_not (InputIt& first, Sentinel last, char_predicate p)
 {
-    while (!starts_with(first, last, p))    ++first;
+    while (first < last && !p(*first))    ++first;
     return true;
 }
 

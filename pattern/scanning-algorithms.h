@@ -22,6 +22,8 @@
 
 #include <algorithm>      // std::find
 #include <string_view>
+#include <type_traits>    // std::is_reference
+#include <utility>
 
 using std::string_view;
 
@@ -42,6 +44,21 @@ concept bool char_predicate =
     requires (Pred p, char c)
     {
         { p(c) } -> bool;
+    };
+
+
+/**
+ * Concept for a range whose start iterator can be modified.
+ */
+template <typename T>
+concept bool mutable_range =
+    requires (T t)
+    {
+        { std::is_reference_v<decltype(t.begin())> }
+            -> decltype(std::is_reference_v<
+                std::remove_reference<decltype(t.begin())>&
+            >);
+        { t.end() }
     };
 
 
@@ -172,6 +189,20 @@ constexpr bool advance_if (InputIt& first, Sentinel last, string_view literal)
 
 
 /**
+ * Range-based overload of *advance_if*
+ *
+ * @param    r   Mutable range representing a character sequence
+ * @param    t   Templated argument to *advance_if*
+ * @return   The return value of the call to *advance_if*
+ */
+template <typename T>
+constexpr bool advance_if (mutable_range& r, T t)
+{
+    return advance_if(r.begin(), r.end(), t);
+}
+
+
+/**
  * Advances an iterator if a character sequence doesn't begin with a certain character.
  *
  * @param    first   Iterator to the start of the sequence, to be advanced
@@ -204,7 +235,6 @@ constexpr bool advance_if_not (InputIt& first, Sentinel last, char_predicate p)
     return true;
 }
 
-
 /**
  * Advances an iterator once if a character sequence doesn't begin with a string of characters.
  *
@@ -223,6 +253,20 @@ constexpr bool advance_if_not (InputIt& first, Sentinel last, string_view litera
 
 
 /**
+ * Range-based overload of *advance_if_not*
+ *
+ * @param    r   Mutable range representing a character sequence
+ * @param    t   Templated argument to *advance_if*
+ * @return   The return value of the call to *advance_if*
+ */
+template <typename T>
+constexpr bool advance_if_not (mutable_range& r, T t)
+{
+    return advance_if_not(r.begin(), r.end(), t);
+}
+
+
+/**
  * Calls *advance_if* with an argument, then returns true regardless of the result.
  *
  * @param    first   Iterator to the start of the sequence, to be advanced
@@ -235,6 +279,20 @@ constexpr bool advance_optionally (InputIt& first, Sentinel last, T t)
 {
     advance_if(first, last, t);
     return true;
+}
+
+
+/**
+ * Range-based overload of *advance_if_not*
+ *
+ * @param    r   Mutable range representing a character sequence
+ * @param    t   Templated argument to *advance_if_not*
+ * @return   The return value of the call to *advance_if_not*
+ */
+template <typename T>
+constexpr bool advance_optionally (mutable_range& r, T t)
+{
+    return advance_optionally(r.begin(), r.end(), t);
 }
 
 
@@ -287,6 +345,20 @@ constexpr bool advance_while (InputIt& first, Sentinel last, string_view literal
 
 
 /**
+ * Range-based overload of *advance_while*
+ *
+ * @param    r   Mutable range representing a character sequence
+ * @param    t   Templated argument to *advance_while*
+ * @return   The return value of the call to *advance_while*
+ */
+template <typename T>
+constexpr bool advance_while (mutable_range& r, T t)
+{
+    return advance_while(r.begin(), r.end(), t);
+}
+
+
+/**
  * Advances an iterator if a character sequence begins with a certain character.
  *
  * @param    first   Iterator to the start of the sequence, to be advanced
@@ -319,6 +391,20 @@ constexpr bool advance_while_not (InputIt& first, Sentinel last, char_predicate 
 
 
 /**
+ * Range-based overload of *advance_while_not*
+ *
+ * @param    r   Mutable range representing a character sequence
+ * @param    t   Templated argument to *advance_while_not*
+ * @return   The return value of the call to *advance_while_not*
+ */
+template <typename T>
+constexpr bool advance_while_not (mutable_range& r, T t)
+{
+    return advance_while_not(r.begin(), r.end(), t);
+}
+
+
+/**
  * Advances an iterator while a character sequence begins with a certain character, up to a maximum amount.
  *
  * @param    first   Iterator to the start of the sequence, to be advanced
@@ -333,6 +419,20 @@ constexpr bool advance_max_if (InputIt& first, Sentinel last, char c, size_t max
     last = first + std::min(last - first, max);
     while (advance_if(first, last, c));
     return true;
+}
+
+
+/**
+ * Range-based overload of *advance_max_if*
+ *
+ * @param    r     Mutable range representing a character sequence
+ * @param    c     Character argument to *advance_max_if*
+ * @param    max   Size argument to *advance_max_if*
+ * @return   The return value of the call to *advance_max_if*
+ */
+constexpr bool advance_max_if (mutable_range& r, char c, size_t max = -1)
+{
+    return advance_max_if(r.begin(), r.end(), c, max);
 }
 
 
@@ -363,6 +463,21 @@ constexpr bool advance_n_if (InputIt& first, Sentinel last, char c, size_t n)
 
 
 /**
+ * Range-based overload of *advance_n_if*
+ *
+ * @param    r   Mutable range representing a character sequence
+ * @param    c   Character argument to *advance_n_if*
+ * @param    n   Size argument to *advance_n_if*
+ * @return   The return value of the call to *advance_n_if*
+ */
+template <typename T>
+constexpr bool advance_n_if (mutable_range& r, char c, size_t n)
+{
+    return advance_n_if(r.begin(), r.end(), c, n);
+}
+
+
+/**
  * Advances an iterator while a character sequence begins with a certain character, a minimum number of times.
  *
  * @param    first   Iterator to the start of the sequence, to be advanced
@@ -377,6 +492,20 @@ constexpr bool advance_min_if (InputIt& first, Sentinel last, char c, size_t min
     if (!advance_n_if(first, last, c, min))    return false;
     advance_while(first, last, c);
     return true;
+}
+
+
+/**
+ * Range-based overload of *advance_min_if*
+ *
+ * @param    r     Mutable range representing a character sequence
+ * @param    c     Character argument to *advance_min_if*
+ * @param    min   Size argument to *advance_min_if*
+ * @return   The return value of the call to *advance_min_if*
+ */
+constexpr bool advance_min_if (mutable_range& r, char c, size_t min = 0)
+{
+    return advance_min_if(r.begin(), r.end(), c, min);
 }
 
 
@@ -403,6 +532,21 @@ constexpr bool advance_repeating (InputIt& first, Sentinel last, char c,
 
 
 /**
+ * Range-based overload of *advance_repeating*
+ *
+ * @param    r     Mutable range representing a character sequence
+ * @param    c     Character argument to *advance_repeating*
+ * @param    min   Minimum size argument to *advance_repeating*
+ * @param    max   Maximum size argument to *advance_repeating*
+ * @return   The return value of the call to *advance_repeating*
+ */
+constexpr bool advance_repeating (mutable_range& r, char c, size_t min = 0, size_t max = -1)
+{
+    return advance_repeating(r.begin(), r.end(), c, min, max);
+}
+
+
+/**
  * Advances an iterator to the next character in a sequence that matches a certain character.
  *
  * @param    first   Iterator to the start of the sequence, to be advanced
@@ -412,6 +556,20 @@ constexpr bool advance_repeating (InputIt& first, Sentinel last, char c,
  */
 template <typename InputIt, typename Sentinel>
 constexpr bool advance_to_if_found (InputIt& first, Sentinel last, char c)
+{
+    // Once ranges are standard, replace with range version
+    auto copy = first;
+
+    while (*copy != c)
+        if (++copy == last)    return false;
+
+    first = copy;
+    return true;
+}
+
+
+template <typename InputIt>
+constexpr bool advance_to_if_found (InputIt& first, InputIt last, char c)
 {
     auto it = std::find(first, last, c);
     if (it == last)    return false;
@@ -431,6 +589,20 @@ constexpr bool advance_to_if_found (InputIt& first, Sentinel last, char c)
  */
 template <typename InputIt, typename Sentinel>
 constexpr bool advance_to_if_found (InputIt& first, Sentinel last, char_predicate p)
+{
+    // Once ranges are standard, replace with range version
+    auto copy = first;
+
+    while (!p(*copy))
+        if (++copy == last)    return false;
+
+    first = copy;
+    return true;
+}
+
+
+template <typename InputIt>
+constexpr bool advance_to_if_found (InputIt& first, InputIt last, char_predicate p)
 {
     auto it = std::find_if(first, last, p);
     if (it == last)    return false;
@@ -460,6 +632,35 @@ constexpr bool advance_to_if_found (InputIt& first, Sentinel last, string_view l
     return true;
 }
 
+
+template <typename InputIt>
+constexpr bool advance_to_if_found (InputIt& first, InputIt last, string_view literal)
+{
+    // Once ranges are standard, replace with range version
+    auto copy = first;
+
+    while (!starts_with(copy, last, literal))
+        if (++copy + literal.length() == last)    return false;
+
+    first = copy;
+    return true;
+}
+
+
+/**
+ * Range-based overload of *advance_to_if_found*
+ *
+ * @param    r   Mutable range representing a character sequence
+ * @param    t   Templated argument to *advance_to_if_found*
+ * @return   The return value of the call to *advance_to_if_found*
+ */
+template <typename T>
+constexpr bool advance_to_if_found (mutable_range& r, T t)
+{
+    return advance_to_if_found(r.begin(), r.end(), t);
+}
+
+
 /**
  * Advances an iterator after the next character in a sequence that matches a certain character.
  *
@@ -470,6 +671,20 @@ constexpr bool advance_to_if_found (InputIt& first, Sentinel last, string_view l
  */
 template <typename InputIt, typename Sentinel>
 constexpr bool advance_past_if_found (InputIt& first, Sentinel last, char c)
+{
+    // Once ranges are standard, replace with range version
+    auto copy = first;
+
+    while (*copy != c)
+        if (++copy == last)    return false;
+
+    first = copy + 1;
+    return true;
+}
+
+
+template <typename InputIt>
+constexpr bool advance_past_if_found (InputIt& first, InputIt last, char c)
 {
     auto it = std::find(first, last, c);
     if (it == last)    return false;
@@ -490,6 +705,20 @@ constexpr bool advance_past_if_found (InputIt& first, Sentinel last, char c)
 template <typename InputIt, typename Sentinel>
 constexpr bool advance_past_if_found (InputIt& first, Sentinel last, char_predicate p)
 {
+    // Once ranges are standard, replace with range version
+    auto copy = first;
+
+    while (!p(*copy))
+        if (++copy == last)    return false;
+
+    first = copy + 1;
+    return true;
+}
+
+
+template <typename InputIt>
+constexpr bool advance_past_if_found (InputIt& first, InputIt last, char_predicate p)
+{
     auto it = std::find_if(first, last, p);
     if (it == last)    return false;
 
@@ -509,6 +738,20 @@ constexpr bool advance_past_if_found (InputIt& first, Sentinel last, char_predic
 template <typename InputIt, typename Sentinel, typename T>
 constexpr bool advance_past_if_found (InputIt& first, Sentinel last, string_view literal)
 {
+    // Once ranges are standard, replace with range version
+    auto copy = first;
+
+    while (!starts_with(copy, last, literal))
+        if (++copy + literal.length() == last)    return false;
+
+    first = copy + literal.length();
+    return true;
+}
+
+
+template <typename InputIt, typename T>
+constexpr bool advance_past_if_found (InputIt& first, InputIt last, string_view literal)
+{
     const T searcher = std::boyer_moore_searcher(literal.begin(), literal.end());
     auto it = searcher(first, last).second;
 
@@ -516,6 +759,20 @@ constexpr bool advance_past_if_found (InputIt& first, Sentinel last, string_view
 
     first = it;
     return true;
+}
+
+
+/**
+ * Range-based overload of *advance_past_if_found*
+ *
+ * @param    r   Mutable range representing a character sequence
+ * @param    t   Templated argument to *advance_past_if_found*
+ * @return   The return value of the call to *advance_past_if_found*
+ */
+template <typename T>
+constexpr bool advance_past_if_found (mutable_range& r, T t)
+{
+    return advance_past_if_found(r.begin(), r.end(), t);
 }
 
 
@@ -535,6 +792,20 @@ constexpr bool advance_if_any (InputIt& first, Sentinel last, Exp... e)
 
 
 /**
+ * Range-based overload of *advance_if_any*
+ *
+ * @param    r      Mutable range representing a character sequence
+ * @param    e...   Templated arguments to *advance_if_any*
+ * @return   The return value of the call to *advance_if_any*
+ */
+template <typename... Exp>
+constexpr bool advance_if_any (mutable_range& r, Exp... e)
+{
+    return advance_if_any(r.begin(), r.end(), e...);
+}
+
+
+/**
  * Calls a series of scanning algorithms in order, returning true if all of them are satisfied.
  *
  * @param    first   Iterator to the start of the sequence, to be advanced
@@ -543,7 +814,7 @@ constexpr bool advance_if_any (InputIt& first, Sentinel last, Exp... e)
  * @return   Whether all of the expressions returned true
  */
 template <typename InputIt, typename Sentinel, typename... Exp>
-constexpr bool advance_joined_if (InputIt& first, Sentinel last, Exp... e)
+constexpr bool advance_concat_if (InputIt& first, Sentinel last, Exp... e)
 {
     InputIt copy = first;
 
@@ -551,6 +822,20 @@ constexpr bool advance_joined_if (InputIt& first, Sentinel last, Exp... e)
 
     first = copy;
     return true;
+}
+
+
+/**
+ * Range-based overload of *advance_concat_if*
+ *
+ * @param    r      Mutable range representing a character sequence
+ * @param    e...   Templated arguments to *advance_concat_if*
+ * @return   The return value of the call to *advance_concat_if*
+ */
+template <typename... Exp>
+constexpr bool advance_concat_if (mutable_range& r, Exp... e)
+{
+    return advance_concat_if(r.begin(), r.end(), e...);
 }
 
 

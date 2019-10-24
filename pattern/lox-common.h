@@ -154,10 +154,10 @@ void pad_right (std::string& s, int amount)
     s.append(amount, ' ');
 }
 
-std::string to_string (const std::monostate s)      { return "";                     }
-std::string to_string (const std::string s)         { return s;                      }
+std::string to_string (const std::monostate s)      { return "";                }
+std::string to_string (const std::string s)         { return s;                 }
 std::string to_string (const std::string_view s)    { return {s.data(), s.length()}; }
-std::string to_string (const double d)              { return std::to_string(d);      }
+std::string to_string (const double d)              { return std::to_string(d); }
 std::string to_string (const source_location s)
 {
     return "[" + std::to_string(s.line) + ", " + std::to_string(s.column) + "]";
@@ -175,8 +175,13 @@ std::string to_string (const lox_token t, const CharT* data)
     std::string msg = to_string(t.tag);
     pad_right(msg, TOKEN_STRING_PAD_LENGTH);
 
-    msg += to_string(t.source_location(data)) + "\t: "
-         + to_string(t.value);
+    msg = to_string(t.source_location(data)) + "\t  " + msg + " : "
+         + (std::holds_alternative<std::monostate>(t.value)
+            ? to_string(t.tag)
+            : t.tag == TokenType::STRING
+                ? "\"" + to_string(t.value) + "\""
+                : to_string(t.value)
+        );
 
     if (t.tag == TokenType::ERROR)    msg += " " + to_string(t.lexeme);
 

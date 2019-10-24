@@ -44,9 +44,15 @@ public:
         : sentry {Iter()}, scout {sentry}
     {}
 
-    explicit constexpr scouting_iterator (const char* i) noexcept
+    explicit constexpr scouting_iterator (const value_type* i) noexcept
         : sentry {i}, scout {sentry}
     {}
+
+
+    explicit constexpr scouting_iterator (const Iter& sentry, const Iter& scout) noexcept
+        : sentry {sentry}, scout {scout}
+    {}
+
 
     // Allow iterator to const_iterator conversion
     template <typename _Iter>
@@ -54,7 +60,24 @@ public:
         : sentry {i.base()}, scout {sentry}
     {}
 
+
+    template <typename _Iter>
+    self_type& operator= (const convertible_type<_Iter>& i) noexcept
+    {
+        scout  = i.scout;
+        sentry = i.sentry;
+        return *this;
+    }
+
+
     self_type& operator= (const Iter& i) noexcept
+    {
+        scout = i;
+        return *this;
+    }
+
+
+    self_type& operator= (const value_type* i) noexcept
     {
         scout = i;
         return *this;
@@ -96,7 +119,7 @@ public:
 
     self_type operator++ (int) noexcept
     {
-        return self_type {scout++};
+        return self_type {sentry, scout++};
     }
 
     self_type& operator-- () noexcept
@@ -107,7 +130,7 @@ public:
 
     self_type operator-- (int) noexcept
     {
-        return self_type {scout--};
+        return self_type {sentry, scout--};
     }
 
     reference operator[] (difference_type n) const noexcept
@@ -123,12 +146,12 @@ public:
 
     self_type operator+ (difference_type n) const noexcept
     {
-        return self_type {scout + n};
+        return self_type {sentry, scout + n};
     }
 
     friend self_type operator+ (difference_type n, const self_type& i) noexcept
     {
-        return self_type {i.base() + n};
+        return self_type {i.sentry, i.base() + n};
     }
 
     self_type& operator-= (difference_type n) noexcept
@@ -139,7 +162,7 @@ public:
 
     self_type operator- (difference_type n)
     {
-        return self_type {scout - n};
+        return self_type {sentry, scout - n};
     }
 
     difference_type operator- (const Iter& i) const noexcept

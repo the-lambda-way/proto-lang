@@ -11,7 +11,7 @@ using std::forward;
 using std::string_view;
 
 
-// A non-owning reference to a character sequence, with iterator semantics.
+// A non-owning reference to a character sequence, with an internal iterator.
 // Based on the design of string_view from GCC 9
 template <typename CharT, typename Traits = std::char_traits<CharT>>
 class basic_scan_view
@@ -36,10 +36,10 @@ public:
     using traits_type            = Traits;
     using const_pointer          = const value_type*;
     using const_reference        = const value_type&;
-    using const_iterator         = const iterator_type;
-    using iterator               = const_iterator;
-    using const_reverse_iterator = std::reverse_iterator<const_iterator>;
-    using reverse_iterator       = const_reverse_iterator;
+    using const_iterator         = const iterator_type&;
+    using iterator               = iterator_type&;
+    using const_reverse_iterator = std::reverse_iterator<const_iterator>&;
+    using reverse_iterator       = std::reverse_iterator<iterator>;
     using sentinel_t             = container_type::iterator;
     using size_type		         = difference_type;
 
@@ -67,15 +67,14 @@ public:
     // ------------------------
     // Relative Iterators
     // ------------------------
-    constexpr const_iterator begin   () const noexcept    { return cursor.base();  }
-    constexpr sentinel_t     end     () const noexcept    { return sequence.end(); }
-    constexpr const_iterator cbegin  () const noexcept    { return cursor.base();  }
-    constexpr sentinel_t     cend    () const noexcept    { return sequence.end(); }
-    constexpr const_iterator rbegin  () const noexcept    { return const_reverse_iterator {cursor.base()};  }
-    constexpr sentinel_t     rend    () const noexcept    { return const_reverse_iterator {sequence.end()}; }
-    constexpr const_iterator crbegin () const noexcept    { return const_reverse_iterator {cursor.base()};  }
-    constexpr sentinel_t     crend   () const noexcept    { return const_reverse_iterator {sequence.end()}; }
-
+    constexpr iterator&              begin   ()       noexcept    { return cursor;         }
+    constexpr sentinel_t             end     () const noexcept    { return sequence.end(); }
+    constexpr const_iterator         cbegin  () const noexcept    { return cursor;         }
+    constexpr sentinel_t             cend    () const noexcept    { return sequence.end(); }
+    constexpr reverse_iterator       rbegin  ()       noexcept    { return const_reverse_iterator {cursor.base()};  }
+    constexpr sentinel_t             rend    () const noexcept    { return const_reverse_iterator {sequence.end()}; }
+    constexpr const_reverse_iterator crbegin () const noexcept    { return const_reverse_iterator {cursor.base()};  }
+    constexpr sentinel_t             crend   () const noexcept    { return const_reverse_iterator {sequence.end()}; }
 
 
     // ------------------------
@@ -112,6 +111,7 @@ public:
 
     constexpr value_type    operator*  () const    { return peek(); }
     constexpr const_pointer operator-> () const    { return cursor.operator->(); }
+
 
     constexpr self_type& increment      ()                         { ++cursor;    return *this; }
     constexpr self_type& operator++     ()                         { ++cursor;    return *this; }
@@ -195,100 +195,6 @@ public:
     constexpr std::string copy_skipped (size_type from_front = 0, size_type from_back = 0)
     {
         return {cursor.saved_data() + from_front, cursor.data() - from_back};
-    }
-
-
-    // ------------------------
-    // Algorithms
-    // ------------------------
-    template <typename T>
-    friend constexpr bool advance_if (basic_scan_view<CharT>& s, T&& t)
-    {
-        return advance_if(s.cursor.base(), s.end(), forward<T>(t));
-    }
-
-
-    template <typename T>
-    friend constexpr bool advance_if_not (basic_scan_view<CharT>& s, T&& t)
-    {
-        return advance_if_not(s.cursor.base(), s.end(), forward<T>(t));
-    }
-
-
-    template <typename T>
-    friend constexpr bool advance_optionally (basic_scan_view<CharT>& s, T&& t)
-    {
-        return advance_optionally(s.cursor.base(), s.end(), forward<T>(t));
-    }
-
-
-    template <typename T>
-    friend constexpr bool advance_while (basic_scan_view<CharT>& s, T&& t)
-    {
-        return advance_while(s.cursor.base(), s.end(), forward<T>(t));
-    }
-
-
-    template <typename T>
-    friend constexpr bool advance_while_not (basic_scan_view<CharT>& s, T&& t)
-    {
-        return advance_while_not(s.cursor.base(), s.end(), forward<T>(t));
-    }
-
-
-    template <typename T>
-    friend constexpr bool advance_max_if (basic_scan_view<CharT>& s, T&& t, size_t max = -1)
-    {
-        return advance_max_if(s.cursor.base(), s.end(), forward<T>(t), max);
-    }
-
-
-    template <typename T>
-    friend constexpr bool advance_n_if (basic_scan_view<CharT>& s, T&& t, size_t n)
-    {
-        return advance_n_if(s.cursor.base(), s.end(), forward<T>(t), n);
-    }
-
-
-    template <typename T>
-    friend constexpr bool advance_min_if (basic_scan_view<CharT>& s, T&& t, size_t min = 0)
-    {
-        return advance_min_if(s.cursor.base(), s.end(), forward<T>(t), min);
-    }
-
-
-    template <typename T>
-    friend constexpr bool advance_min_if (basic_scan_view<CharT>& s, T&& t, size_t min = 0, size_t max = -1)
-    {
-        return advance_min_if(s.cursor.base(), s.end(), forward<T>(t), min, max);
-    }
-
-
-    template <typename T>
-    friend constexpr bool advance_to_if_found (basic_scan_view<CharT>& s, T&& t)
-    {
-        return advance_if_found(s.cursor.base(), s.end(), forward<T>(t));
-    }
-
-
-    template <typename T>
-    friend constexpr bool advance_past_if_found (basic_scan_view<CharT>& s, T&& t)
-    {
-        return advance_past_if_found(s.cursor.base(), s.end(), forward<T>(t));
-    }
-
-
-    template <typename... Exp>
-    friend constexpr bool advance_if_any (basic_scan_view<CharT>& s, Exp... e)
-    {
-        return advance_if_any(s.cursor.base(), s.end(), e...);
-    }
-
-
-    template <typename... Exp>
-    friend constexpr bool advance_joined_if (basic_scan_view<CharT>& s, Exp... e)
-    {
-        return advance_joined(s.cursor.base(), s.end(), e...);
     }
 
 

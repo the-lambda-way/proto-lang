@@ -57,9 +57,11 @@ lox_token number (scan_view& s)
 
 lox_token string (scan_view& s)
 {
-    if (!advance_past_if_found(s, '"'))    return {TokenType::ERROR, "Unterminated string."s, s.skipped()};
+    advance_while_not(s, '"');
+    if (s.eof())    return {TokenType::ERROR, "Unterminated string."s, s.skipped()};
 
-    return {TokenType::STRING, s.skipped(1, 2), s.skipped()};
+    ++s;
+    return {TokenType::STRING, s.skipped(1, 1), s.skipped()};
 }
 
 
@@ -101,15 +103,9 @@ std::vector<lox_token> scan_tokens (const std::string& source) {
             case '>' : *s == '=' ? tokens.emplace_back(GREATER_EQUAL, empty, (++s).skipped())
                                  : tokens.emplace_back(GREATER,       empty,  s.skipped());
                        break;
-
-            case '/' :
-                if (*s == '/')
-                    // A comment goes until the end of the line.
-                    advance_while_not(s, '\n');
-
-                else
-                    tokens.emplace_back(SLASH, empty, s.skipped());
-                break;
+            case '/' : *s == '/' ? advance_while_not(s, '\n')
+                                 : tokens.emplace_back(SLASH, empty, s.skipped());
+                       break;
 
             case ' '  :
             case '\r' :

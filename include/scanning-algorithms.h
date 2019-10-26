@@ -31,7 +31,6 @@ using std::string_view;
 // ---------------------------------------------------------------------------------------------------------------------
 //  Concepts
 // ---------------------------------------------------------------------------------------------------------------------
-
 /**
  * Concept for a character predicate.
  *
@@ -54,11 +53,8 @@ template <typename T>
 concept bool mutable_range =
     requires (T t)
     {
-        { std::is_reference_v<decltype(t.begin())> }
-            -> decltype(std::is_reference_v<
-                std::remove_reference<decltype(t.begin())>&
-            >);
-        { t.end() }
+        { t.begin() } -> std::remove_reference_t<decltype(t.begin())>&;
+        { t.end()   }
     };
 
 

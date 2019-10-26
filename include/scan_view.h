@@ -189,7 +189,7 @@ public:
     // from_back
     constexpr container_type skipped (size_type from_front = 0, size_type from_back = 0)
     {
-        return sequence.substr(base_index() + from_front, cursor.distance() - from_back);
+        return sequence.substr(base_index() + from_front, cursor.distance() - from_front - from_back);
     }
 
     constexpr std::string copy_skipped (size_type from_front = 0, size_type from_back = 0)

@@ -466,7 +466,6 @@ constexpr bool advance_n_if (InputIt& first, Sentinel last, char c, size_t n)
  * @param    n   Size argument to *advance_n_if*
  * @return   The return value of the call to *advance_n_if*
  */
-template <typename T>
 constexpr bool advance_n_if (mutable_range& r, char c, size_t n)
 {
     return advance_n_if(r.begin(), r.end(), c, n);
@@ -810,7 +809,7 @@ constexpr bool advance_if_any (mutable_range& r, Exp... e)
  * @return   Whether all of the expressions returned true
  */
 template <typename InputIt, typename Sentinel, typename... Exp>
-constexpr bool advance_concat_if (InputIt& first, Sentinel last, Exp... e)
+constexpr bool advance_join_if (InputIt& first, Sentinel last, Exp... e)
 {
     InputIt copy = first;
 
@@ -822,16 +821,16 @@ constexpr bool advance_concat_if (InputIt& first, Sentinel last, Exp... e)
 
 
 /**
- * Range-based overload of *advance_concat_if*
+ * Range-based overload of *advance_join_if*
  *
  * @param    r      Mutable range representing a character sequence
- * @param    e...   Templated arguments to *advance_concat_if*
- * @return   The return value of the call to *advance_concat_if*
+ * @param    e...   Templated arguments to *advance_join_if*
+ * @return   The return value of the call to *advance_join_if*
  */
 template <typename... Exp>
-constexpr bool advance_concat_if (mutable_range& r, Exp... e)
+constexpr bool advance_join_if (mutable_range& r, Exp... e)
 {
-    return advance_concat_if(r.begin(), r.end(), e...);
+    return advance_join_if(r.begin(), r.end(), e...);
 }
 
 

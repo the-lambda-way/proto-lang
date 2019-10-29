@@ -125,14 +125,9 @@ scanner fractional = Scan::join('.', integer);
 
 number_token number4 (scan_view& s)
 {
-    auto match_int = match_when(s, integer);
-    if (!match_int)    return none_token;
-
-    auto match_frac = match_when(s, fractional);
-    if (!match_frac)    return {TokenType::INTEGER, std::stoi(to_string(match_int.value()))};
-
-    double val = std::stod(to_string(match_int.value()) + to_string(match_frac.value()));
-    return {TokenType::DECIMAL, val};
+    if (!integer(s))       return none_token;
+    if (!fractional(s))    return {TokenType::INTEGER, std::stoi(s.copy_skipped())};
+    return {TokenType::DECIMAL, std::stod(s.copy_skipped())};
 }
 
 // add number4 to your custom parser
@@ -146,8 +141,8 @@ number_token number4 (scan_view& s)
 namespace DeclarativeExample
 {
 
-matcher integer    = Match::at_least(1, is_digit);
-matcher fractional = Match::join('.', integer);
+scanner integer    = Scan::at_least(1, is_digit);
+scanner fractional = Scan::join('.', integer);
 
 number_token tokenize_int (string_view match)
 {
@@ -175,7 +170,7 @@ namespace GrammarExample
 {
 
 rule digit   = GrammarExp >> '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9';
-rule integer = *digit;
+rule integer = +digit;
 rule decimal = integer, '.', integer;
 
 number_token tokenize_int (string_view match)

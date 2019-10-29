@@ -92,7 +92,7 @@ number_token number (scan_view& s)
 
 ## High-level
 
-The *save()* member of the scan_view class provides a simple mechanism to backtrack or obtain the characters of a successful parse. The first example copied matching characters one by one into a string. This example uses *s.copy_skipped()* to return the string from the last save to the current position.
+The *save()* member of the scan_view class provides a simple mechanism to backtrack or help obtain the characters of a successful parse. The first example copied matching characters one by one into a string. This example uses *s.copy_skipped()* to return the string from the last save to the current position.
 
 Iteration has been replaced here with algorithms.
 
@@ -123,10 +123,7 @@ number_token number2 (scan_view& s)
 
 ## Declarative-level
 
-Higher-order functions can be used to generate scanning and parsing functions for you. The next example creates matchers which return an optional string_view if the match is successful.
-
-(Implementation hasn't been pushed yet, but is mostly done.)
-
+Higher-order functions can be used to generate scanning and parsing functions for you. The next example uses function combinators to create custom scanners.
 
 
 ```c++
@@ -135,14 +132,9 @@ scanner fractional = Scan::join('.', integer);
 
 number_token number4 (scan_view& s)
 {
-    auto match_int = match_when(s, integer);
-    if (!match_int)    return none_token;
-
-    auto match_frac = match_when(s, fractional);
-    if (!match_frac)    return {TokenType::INTEGER, std::stoi(to_string(match_int.value()))};
-
-    double val = std::stod(to_string(match_int.value()) + to_string(match_frac.value()));
-    return {TokenType::DECIMAL, val};
+    if (!integer(s))       return none_token;
+    if (!fractional(s))    return {TokenType::INTEGER, std::stoi(s.copy_skipped())};
+    return {TokenType::DECIMAL, std::stod(s.copy_skipped())};
 }
 
 // add number4 to your custom parser
@@ -150,15 +142,15 @@ number_token number4 (scan_view& s)
 
 
 
-The next example takes the last one step further and generates a tokenizer given a matcher and tokenization algorithm. The tokenizer would then be passed a scan_view and return an optional token.
+The next example takes the last example one step further and generates a tokenizer given a scanner and tokenization algorithm. The tokenizer would then be passed a scan_view and return an optional token.
 
 (Not yet implemented.)
 
 
 
 ```c++
-matcher integer    = Match::at_least(1, is_digit);
-matcher fractional = Match::join('.', integer);
+scanner integer    = Scan::at_least(1, is_digit);
+scanner fractional = Scan::join('.', integer);
 
 number_token tokenize_int (string_view match)
 {

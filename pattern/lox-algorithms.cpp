@@ -9,8 +9,8 @@
 #include <string_view>
 #include <vector>      // token list
 #include "../include/syntax.h"
-#include "scan_view.h"
-#include "scanning-algorithms.h"
+#include "../include/scan_view.h"
+#include "../include/scanning-algorithms.h"
 #include "lox-common.h"
 
 using std::string_view;
@@ -103,9 +103,10 @@ std::vector<lox_token> scan_tokens (const std::string& source) {
             case '>' : *s == '=' ? tokens.emplace_back(GREATER_EQUAL, empty, (++s).skipped())
                                  : tokens.emplace_back(GREATER,       empty,  s.skipped());
                        break;
-            case '/' : *s == '/' ? advance_while_not(s, '\n')
-                                 : tokens.emplace_back(SLASH, empty, s.skipped());
-                       break;
+            case '/' :
+                if (*s == '/')    advance_while_not(s, '\n');
+                else              tokens.emplace_back(SLASH, empty, s.skipped());
+                break;
 
             case ' '  :
             case '\r' :

@@ -406,13 +406,15 @@ constexpr bool advance_while_not (mutable_range& r, T t)
  * @param    first   Iterator to the start of the sequence, to be advanced
  * @param    last    Sentinel to the end of the sequence
  * @param    c       Character to compare equal with
- * @param    max     Maximum number of times to repeat, -1 to match until fail
+ * @param    max     Maximum number of times to repeat, -1 for infinite match
  * @return   Always returns true
  */
 template <typename InputIt, typename Sentinel>
 constexpr bool advance_max_if (InputIt& first, Sentinel last, char c, size_t max = -1)
 {
-    last = first + std::min(last - first, max);
+    size_t diff = last - first;
+    last = last - diff + std::min(diff, max);
+
     while (advance_if(first, last, c));
     return true;
 }

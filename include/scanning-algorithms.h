@@ -426,10 +426,7 @@ template <typename InputIt, typename Sentinel, typename... Args,
           compound_scannable_expression<InputIt, Sentinel, Args...> Exp>
 constexpr bool advance_max_if (InputIt& first, Sentinel last, Exp e, Args... args, size_t max = -1)
 {
-    // No algorithm can advance more times than the number of characters remaining (in theory)
-    size_t count = std::min(size_t(last - first), max);
-
-    while (count-- && advance_if(first, last, e, args...));
+    while (max-- && advance_if(first, last, e, args...));
     return true;
 }
 
@@ -558,6 +555,8 @@ constexpr bool advance_join_if (mutable_range& r, Args&&... args)
 // ---------------------------------------------------------------------------------------------------------------------
 // Algorithm Sugar
 // ---------------------------------------------------------------------------------------------------------------------
+// These should be tested to check if they are redundants
+
 /**
  * Advances an iterator while the beginning of a string doesn't satisfy a given scannable expression.
  *

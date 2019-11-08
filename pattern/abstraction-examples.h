@@ -116,7 +116,7 @@ number_token number3 (scan_view& s)
 namespace HigherOrderExample
 {
 
-scanner integer    = Scan::at_least(1, is_digit);
+scanner integer    = Scan::min(1, is_digit);
 scanner fractional = Scan::join('.', integer);
 
 number_token number4 (scan_view& s)
@@ -137,7 +137,7 @@ number_token number4 (scan_view& s)
 namespace DeclarativeExample
 {
 
-scanner integer    = Scan::at_least(1, is_digit);
+scanner integer    = Scan::min(1, is_digit);
 scanner fractional = Scan::join('.', integer);
 
 number_token tokenize_int (string_view match)
@@ -194,7 +194,7 @@ namespace CRTPExample
 {
 
 Parser myLang;
-scanner integer    = Scan::at_least(1, is_digit);
+scanner integer    = Scan::min(1, is_digit);
 scanner fractional = Scan::join('.', integer);
 
 struct number6 : AddRule<MyLang, number6>

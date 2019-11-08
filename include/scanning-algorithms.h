@@ -632,7 +632,7 @@ template <forward_iterator Iterator,
 constexpr bool advance_while_not (Iterator& first, Sentinel last,
                                   Expression e, Args... args)
 {
-    while (advance_if_not(first, last, e, args...));
+    while (advance_if_not(first, last, e, forward<Args>(args)...));
     return true;
 }
 

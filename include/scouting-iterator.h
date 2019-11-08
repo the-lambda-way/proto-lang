@@ -48,18 +48,15 @@ public:
         : sentry {i}, scout {sentry}
     {}
 
-
     explicit constexpr scouting_iterator (const Iter& sentry, const Iter& scout) noexcept
         : sentry {sentry}, scout {scout}
     {}
 
-
     // Allow iterator to const_iterator conversion
     template <typename _Iter>
     constexpr scouting_iterator (const convertible_type<_Iter>& i) noexcept
-        : sentry {i.base()}, scout {sentry}
+        : sentry {i.get_sentry()}, scout {sentry}
     {}
-
 
     template <typename _Iter>
     self_type& operator= (const convertible_type<_Iter>& i) noexcept
@@ -69,13 +66,11 @@ public:
         return *this;
     }
 
-
     self_type& operator= (const Iter& i) noexcept
     {
         scout = i;
         return *this;
     }
-
 
     self_type& operator= (const value_type* i) noexcept
     {
@@ -101,8 +96,6 @@ public:
     constexpr Iter  get_scout   () const noexcept    { return scout;  }
     constexpr Iter& sentry_base ()       noexcept    { return sentry; }
     constexpr Iter& base        ()       noexcept    { return scout;  }
-    constexpr Iter  begin       () const noexcept    { return sentry; }
-    constexpr Iter  end         () const noexcept    { return scout;  }
     constexpr const value_type* saved_data () const noexcept    { return &*sentry; }
     constexpr const value_type* data       () const noexcept    { return &*scout; }
 
@@ -151,7 +144,7 @@ public:
 
     friend self_type operator+ (difference_type n, const self_type& i) noexcept
     {
-        return self_type {i.sentry, i.base() + n};
+        return self_type {i.sentry, i.scout + n};
     }
 
     self_type& operator-= (difference_type n) noexcept
@@ -172,7 +165,7 @@ public:
 
     friend difference_type operator- (const Iter& lhs, const self_type& rhs) noexcept
     {
-        return lhs - rhs.base();
+        return lhs - rhs.scout;
     }
 
     bool operator== (const Iter& i) const noexcept
@@ -182,7 +175,7 @@ public:
 
     friend bool operator== (const Iter& lhs, const self_type& rhs) noexcept
     {
-        return lhs == rhs.base();
+        return lhs == rhs.scout;
     }
 
     bool operator!= (const Iter& i) const noexcept
@@ -192,7 +185,7 @@ public:
 
     friend bool operator!= (const Iter& lhs, const self_type& rhs) noexcept
     {
-        return lhs != rhs.base();
+        return lhs != rhs.scout;
     }
 
     bool operator< (const Iter& i) const noexcept
@@ -202,7 +195,7 @@ public:
 
     friend bool operator< (const Iter& lhs, const self_type& rhs) noexcept
     {
-        return lhs < rhs.base();
+        return lhs < rhs.scout;
     }
 
     bool operator<= (const Iter& i) const noexcept
@@ -212,7 +205,7 @@ public:
 
     friend bool operator<= (const Iter& lhs, const self_type& rhs) noexcept
     {
-        return lhs <= rhs.base();
+        return lhs <= rhs.scout;
     }
 
     bool operator> (const Iter& i) const noexcept
@@ -222,7 +215,7 @@ public:
 
     friend bool operator> (const Iter& lhs, const self_type& rhs) noexcept
     {
-        return lhs > rhs.base();
+        return lhs > rhs.scout;
     }
 
     bool operator>= (const Iter& i) const noexcept
@@ -232,7 +225,7 @@ public:
 
     friend bool operator>= (const Iter& lhs, const self_type& rhs) noexcept
     {
-        return lhs >= rhs.base();
+        return lhs >= rhs.scout;
     }
 
     constexpr difference_type distance () const noexcept
@@ -246,42 +239,42 @@ template <typename IterL, typename IterR, typename Container>
 inline bool operator== (const scouting_iterator<IterL, Container>& lhs,
                         const scouting_iterator<IterR, Container>& rhs) noexcept
 {
-    return lhs.base() == rhs.base();
+    return lhs.get_scout() == rhs.get_scout();
 }
 
 template <typename IterL, typename IterR, typename Container>
 inline bool operator!= (const scouting_iterator<IterL, Container>& lhs,
                         const scouting_iterator<IterR, Container>& rhs) noexcept
 {
-    return lhs.base() != rhs.base();
+    return lhs.get_scout() != rhs.get_scout();
 }
 
 template <typename IterL, typename IterR, typename Container>
 inline bool operator< (const scouting_iterator<IterL, Container>& lhs,
                        const scouting_iterator<IterR, Container>& rhs) noexcept
 {
-    return lhs.base() < rhs.base();
+    return lhs.get_scout() < rhs.get_scout();
 }
 
 template <typename IterL, typename IterR, typename Container>
 inline bool operator<= (const scouting_iterator<IterL, Container>& lhs,
                         const scouting_iterator<IterR, Container>& rhs) noexcept
 {
-    return lhs.base() <= rhs.base();
+    return lhs.get_scout() <= rhs.get_scout();
 }
 
 template <typename IterL, typename IterR, typename Container>
 inline bool operator> (const scouting_iterator<IterL, Container>& lhs,
                        const scouting_iterator<IterR, Container>& rhs) noexcept
 {
-    return lhs.base() > rhs.base();
+    return lhs.get_scout() > rhs.get_scout();
 }
 
 template <typename IterL, typename IterR, typename Container>
 inline bool operator>= (const scouting_iterator<IterL, Container>& lhs,
                         const scouting_iterator<IterR, Container>& rhs) noexcept
 {
-    return lhs.base() >= rhs.base();
+    return lhs.get_scout() >= rhs.get_scout();
 }
 
 template <typename IterL, typename IterR, typename Container>
@@ -289,7 +282,7 @@ inline typename scouting_iterator<IterL, Container>::difference_type
 operator- (const scouting_iterator<IterL, Container>& lhs,
            const scouting_iterator<IterR, Container>& rhs) noexcept
 {
-    return lhs.base() < rhs.base();
+    return lhs.get_scout() < rhs.get_scout();
 }
 
 

@@ -77,65 +77,95 @@ namespace Scan
 
 namespace Detail
 {
-    MAKE_SCANNER(when_t, advance_if);
-    MAKE_SCANNER(lit_t, advance_if);
-    MAKE_SCANNER(opt_t, advance_optionally);
-    MAKE_SCANNER(while_it_t, advance_while);
-    MAKE_SCANNER(at_most_t, advance_max_if);
-    MAKE_SCANNER(n_times_t, advance_n_if);
-    MAKE_SCANNER(min_t, advance_min_if);
-    MAKE_SCANNER(any_t, advance_any_if);
-    MAKE_SCANNER(join_t, advance_join_if);
-    MAKE_SCANNER(while_not_t, advance_while_not);
+    MAKE_SCANNER(when_t,        advance_if);
+    MAKE_SCANNER(opt_t,         advance_optionally);
+    MAKE_SCANNER(while_it_t,    advance_while);
+    MAKE_SCANNER(while_not_t,   advance_while_not);
+    MAKE_SCANNER(stop_before_t, advance_to_if_found);
+    MAKE_SCANNER(until_t,       advance_past_if);
+    MAKE_SCANNER(n_times_t,     advance_n_if);
+    MAKE_SCANNER(min_t,         advance_min_if);
+    MAKE_SCANNER(at_most_t,     advance_max_if);
+    MAKE_SCANNER(rep_t,         advance_repeating);
+    MAKE_SCANNER(any_t,         advance_any_if);
+    MAKE_SCANNER(join_t,        advance_join_if);
 }
 
 
 template <typename Expr, typename... Args>
 auto when (Expr e, Args... args)
 {
-    return Detail::when_t(e, args...);
+    return Detail::when_t(e, forward<Args>(args)...);
 }
 
 
 template <typename Expr, typename... Args>
 auto lit (Expr e, Args... args)
 {
-    return Detail::lit_t(e, args...);
+    return Detail::when_t(e, forward<Args>(args)...);
 }
 
 
 template <typename Expr, typename... Args>
 auto opt (Expr e, Args... args)
 {
-    return Detail::opt_t(e, args...);
+    return Detail::opt_t(e, forward<Args>(args)...);
 }
 
 
 template <typename Expr, typename... Args>
 auto while_it (Expr e, Args... args)
 {
-    return Detail::while_it_t(e, args...);
+    return Detail::while_it_t(e, forward<Args>(args)...);
 }
 
 
 template <typename Expr, typename... Args>
-auto at_most (size_t max, Expr e, Args... args)
+auto while_not (Expr e, Args... args)
 {
-    return Detail::at_most_t(e, args..., max);
+    return Detail::while_not_t(e, forward<Args>(args)...);
+}
+
+
+template <typename Expr, typename... Args>
+auto stop_before (Expr e, Args... args)
+{
+    return Detail::stop_before_t(e, forward<Args>(args)...);
+}
+
+
+template <typename Expr, typename... Args>
+auto until (Expr e, Args... args)
+{
+    return Detail::until_t(e, forward<Args>(args)...);
 }
 
 
 template <typename Expr, typename... Args>
 auto n_times (size_t n, Expr e, Args... args)
 {
-    return Detail::n_times_t(e, args..., n);
+    return Detail::n_times_t(e, forward<Args>(args)..., n);
 }
 
 
 template <typename Expr, typename... Args>
 auto min (size_t n, Expr e, Args... args)
 {
-    return Detail::min_t(e, args..., n);
+    return Detail::min_t(e, forward<Args>(args)..., n);
+}
+
+
+template <typename Expr, typename... Args>
+auto at_most (size_t max, Expr e, Args... args)
+{
+    return Detail::at_most_t(e, forward<Args>(args)..., max);
+}
+
+
+template <typename Expr, typename... Args>
+auto rep (size_t min, size_t max, Expr e, Args... args)
+{
+    return Detail::rep_t(e, forward<Args>(args)..., min, max);
 }
 
 
@@ -151,37 +181,6 @@ auto join (Expr... e)
 {
     return Detail::join_t(e...);
 }
-
-
-template <typename Expr, typename... Args>
-auto while_not (Expr e, Args... args)
-{
-    return Detail::while_not_t(e, args...);
-}
-
-
-// // rep (size_t min = 0, size_t max = -1)
-// template <typename Expr, typename... Args>
-// auto n_times (Expr e, Args... args, size_t n)
-// {
-//     return MAKE_SCANNER(advance_n_if, e, args..., n);
-// }
-
-
-// // stop_before
-// template <typename Expr, typename... Args>
-// auto n_times (Expr e, Args... args, size_t n)
-// {
-//     return MAKE_SCANNER(advance_n_if, e, args..., n);
-// }
-
-
-// // until
-// template <typename Expr, typename... Args>
-// auto n_times (Expr e, Args... args, size_t n)
-// {
-//     return MAKE_SCANNER(advance_n_if, e, args..., n);
-// }
 
 
 } // namespace Scan

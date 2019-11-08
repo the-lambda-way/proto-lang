@@ -64,7 +64,6 @@ concept bool scanning_algorithm =
     requires (Function f, Iterator& first, Sentinel last, Args... args)
     {
         { f(first, last, args...) } -> bool;
-        { first.begin() || true } -> bool;    // first must not be a range, this ad-hoc solution should be replaced once Iterator concepts are available
     };
 
 
@@ -103,8 +102,9 @@ concept bool scannable_expression =
  * @param    c       Character to compare equal with
  * @return   Whether the character compared equal
  */
-template <typename InputIt, typename Sentinel>
-constexpr bool starts_with (InputIt first, Sentinel last,
+template <forward_iterator Iterator,
+          sentinel_for<Iterator> Sentinel>
+constexpr bool starts_with (Iterator first, Sentinel last,
                             char c)
 {
     return (first < last && *first == c);
@@ -119,8 +119,9 @@ constexpr bool starts_with (InputIt first, Sentinel last,
  * @param    literal   String to compare equal with
  * @return   Whether *literal* compared equal
  */
-template <typename InputIt, typename Sentinel>
-constexpr bool starts_with (InputIt first, Sentinel last,
+template <forward_iterator Iterator,
+          sentinel_for<Iterator> Sentinel>
+constexpr bool starts_with (Iterator first, Sentinel last,
                             string_view literal)
 {
     if constexpr (!starts_with(first, last, literal.front()))    return false;
@@ -149,8 +150,9 @@ constexpr bool starts_with (InputIt first, Sentinel last,
  * @param    c       Character to compare equal with
  * @return   Whether the character compared equal
  */
-template <typename InputIt, typename Sentinel>
-constexpr bool scan_with (InputIt first, Sentinel last,
+template <forward_iterator Iterator,
+          sentinel_for<Iterator> Sentinel>
+constexpr bool scan_with (Iterator first, Sentinel last,
                           char c)
 {
     return starts_with(first, last, c);
@@ -166,10 +168,12 @@ constexpr bool scan_with (InputIt first, Sentinel last,
  * @param    args...   Arguments passed to *p*
  * @return   Whether the predicate returned true
  */
-template <typename InputIt, typename Sentinel,
-          typename... Args>
-constexpr bool scan_with (InputIt first, Sentinel last,
-                          char_predicate<Args...> p, Args&&... args)
+template <forward_iterator Iterator,
+          sentinel_for<Iterator> Sentinel,
+          typename... Args,
+          char_predicate<Args...> Predicate>
+constexpr bool scan_with (Iterator first, Sentinel last,
+                          Predicate p, Args&&... args)
 {
     return (first < last && p(*first, forward<Args>(args)...));
 }
@@ -184,8 +188,9 @@ constexpr bool scan_with (InputIt first, Sentinel last,
  * @return   Whether *literal* compared equal
  */
 // Compound algorithms take the begin iterator by reference, so the iterator can advance during the predicate check.
-template <typename InputIt, typename Sentinel>
-constexpr bool scan_with (InputIt& first, Sentinel last,
+template <forward_iterator Iterator,
+          sentinel_for<Iterator> Sentinel>
+constexpr bool scan_with (Iterator& first, Sentinel last,
                           string_view literal)
 {
     return starts_with(&first, last, literal);
@@ -201,10 +206,12 @@ constexpr bool scan_with (InputIt& first, Sentinel last,
  * @param    args...   Arguments passed to *f*
  * @return   Whether the scanning algorithm returned true
  */
-template <typename InputIt, typename Sentinel,
-          typename... Args, scanning_algorithm<InputIt, Sentinel, Args...> Func>
-constexpr bool scan_with (InputIt& first, Sentinel last,
-                          Func f, Args&&... args)
+template <forward_iterator Iterator,
+          sentinel_for<Iterator> Sentinel,
+          typename... Args,
+          scanning_algorithm<Iterator, Sentinel, Args...> Function>
+constexpr bool scan_with (Iterator& first, Sentinel last,
+                          Function f, Args&&... args)
 {
     return f(first, last, forward<Args>(args)...);
 }
@@ -223,10 +230,12 @@ constexpr bool scan_with (InputIt& first, Sentinel last,
  * @param    args...   Arguments passed to *e*
  * @return   Whether the predicate returned true
  */
-template <typename InputIt, typename Sentinel,
-          typename... Args, atomic_scannable_expression<Args...> Exp>
-constexpr bool advance_if (InputIt& first, Sentinel last,
-                           Exp e, Args... args)
+template <forward_iterator Iterator,
+          sentinel_for<Iterator> Sentinel,
+          typename... Args,
+          atomic_scannable_expression<Args...> Expression>
+constexpr bool advance_if (Iterator& first, Sentinel last,
+                           Expression e, Args... args)
 {
     if (!scan_with(first, last, e, forward<Args>(args)...))    return false;
     ++first;
@@ -243,12 +252,14 @@ constexpr bool advance_if (InputIt& first, Sentinel last,
  * @param    args...   Arguments passed to *e*
  * @return   Whether literal compared equal
  */
-template <typename InputIt, typename Sentinel,
-          typename... Args, compound_scannable_expression<InputIt, Sentinel, Args...> Exp>
-constexpr bool advance_if (InputIt& first, Sentinel last,
-                           Exp e, Args&&... args)
+template <forward_iterator Iterator,
+          sentinel_for<Iterator> Sentinel,
+          typename... Args,
+          compound_scannable_expression<Iterator, Sentinel, Args...> Expression>
+constexpr bool advance_if (Iterator& first, Sentinel last,
+                           Expression e, Args&&... args)
 {
-    InputIt copy = first;
+    Iterator copy = first;
 
     if (!scan_with(copy, last, e, forward<Args>(args)...))    return false;
 
@@ -266,10 +277,12 @@ constexpr bool advance_if (InputIt& first, Sentinel last,
  * @param    args...   Arguments passed to *e*
  * @return   True if the scan failed
  */
-template <typename InputIt, typename Sentinel,
-          typename... Args, scannable_expression<InputIt, Sentinel, Args...> Exp>
-constexpr bool advance_if_not (InputIt& first, Sentinel last,
-                               Exp e, Args&&... args)
+template <forward_iterator Iterator,
+          sentinel_for<Iterator> Sentinel,
+          typename... Args,
+          scannable_expression<Iterator, Sentinel, Args...> Expression>
+constexpr bool advance_if_not (Iterator& first, Sentinel last,
+                               Expression e, Args&&... args)
 {
     if (scan_with(first, last, e, forward<Args>(args)...))    return false;
     ++first;
@@ -286,10 +299,12 @@ constexpr bool advance_if_not (InputIt& first, Sentinel last,
  * @param    args...   Arguments passed to *e*
  * @return   Always returns true
  */
-template <typename InputIt, typename Sentinel,
-          typename... Args, scannable_expression<InputIt, Sentinel, Args...> Exp>
-constexpr bool advance_optionally (InputIt& first, Sentinel last,
-                                   Exp e, Args&&... args)
+template <forward_iterator Iterator,
+          sentinel_for<Iterator> Sentinel,
+          typename... Args,
+          scannable_expression<Iterator, Sentinel, Args...> Expression>
+constexpr bool advance_optionally (Iterator& first, Sentinel last,
+                                   Expression e, Args&&... args)
 {
     advance_if(first, last, e, forward<Args>(args)...);
     return true;
@@ -305,10 +320,12 @@ constexpr bool advance_optionally (InputIt& first, Sentinel last,
  * @param    args...   Arguments passed to *e*
  * @return   Always returns true
  */
-template <typename InputIt, typename Sentinel,
-          typename... Args, scannable_expression<InputIt, Sentinel, Args...> Exp>
-constexpr bool advance_while (InputIt& first, Sentinel last,
-                              Exp e, Args... args)
+template <forward_iterator Iterator,
+          sentinel_for<Iterator> Sentinel,
+          typename... Args,
+          scannable_expression<Iterator, Sentinel, Args...> Expression>
+constexpr bool advance_while (Iterator& first, Sentinel last,
+                              Expression e, Args... args)
 {
     while (advance_if(first, last, e, args...));
     return true;
@@ -325,14 +342,16 @@ constexpr bool advance_while (InputIt& first, Sentinel last,
  * @param    args...   Arguments passed to *e*
  * @return   Always returns true
  */
-template <typename InputIt, typename Sentinel,
-          typename... Args, atomic_scannable_expression<Args...> Exp>
-constexpr bool advance_max_if (InputIt& first, Sentinel last,
-                               Exp e, Args&&... args,
+template <forward_iterator Iterator,
+          sentinel_for<Iterator> Sentinel,
+          typename... Args,
+          atomic_scannable_expression<Args...> Expression>
+constexpr bool advance_max_if (Iterator& first, Sentinel last,
+                               Expression e, Args&&... args,
                                size_t max = -1)
 {
     // No algorithm can advance more times than the number of characters remaining (in theory)
-    // *Sentinel* might not be convertible to *InputIt*, so a few extra steps are required
+    // *Sentinel* might not be convertible to *Iterator*, so a few extra steps are required
     size_t diff = last - first;
     last = last - diff + std::min(diff, max);
 
@@ -351,10 +370,12 @@ constexpr bool advance_max_if (InputIt& first, Sentinel last,
  * @param    args...   Arguments passed to *e*
  * @return   Always returns true
  */
-template <typename InputIt, typename Sentinel,
-          typename... Args, compound_scannable_expression<InputIt, Sentinel, Args...> Exp>
-constexpr bool advance_max_if (InputIt& first, Sentinel last,
-                               Exp e, Args... args,
+template <forward_iterator Iterator,
+          sentinel_for<Iterator> Sentinel,
+          typename... Args,
+          compound_scannable_expression<Iterator, Sentinel, Args...> Expression>
+constexpr bool advance_max_if (Iterator& first, Sentinel last,
+                               Expression e, Args... args,
                                size_t max = -1)
 {
     while (max-- && advance_if(first, last, e, args...));
@@ -372,17 +393,19 @@ constexpr bool advance_max_if (InputIt& first, Sentinel last,
  * @param    args...   Arguments passed to *e*
  * @return   Whether n repeats were successful
  */
-template <typename InputIt, typename Sentinel,
-          typename... Args, scannable_expression<InputIt, Sentinel, Args...> Exp>
-constexpr bool advance_n_if (InputIt& first, Sentinel last,
-                             Exp e, Args... args,
+template <forward_iterator Iterator,
+          sentinel_for<Iterator> Sentinel,
+          typename... Args,
+          scannable_expression<Iterator, Sentinel, Args...> Expression>
+constexpr bool advance_n_if (Iterator& first, Sentinel last,
+                             Expression e, Args... args,
                              size_t n)
 {
     if (first - last < n)    return false;
     if (n == 0)              return true;
     if (n == 1)              return advance_if(first, last, e, args...);
 
-    InputIt copy = first;
+    Iterator copy = first;
 
     while (n--)
         if (!advance_if(copy, last, e, args...))    return false;
@@ -400,10 +423,11 @@ constexpr bool advance_n_if (InputIt& first, Sentinel last,
  * @param    e...    Expressions to test the string with
  * @return   Whether any of the expressions returned true
  */
-template <typename InputIt, typename Sentinel,
-          scannable_expression<InputIt, Sentinel>... Exp>
-constexpr bool advance_if_any (InputIt& first, Sentinel last,
-                               Exp... e)
+template <forward_iterator Iterator,
+          sentinel_for<Iterator> Sentinel,
+          scannable_expression<Iterator, Sentinel>... Expression>
+constexpr bool advance_if_any (Iterator& first, Sentinel last,
+                               Expression... e)
 {
     return (... || advance_if(first, last, e));
 }
@@ -417,12 +441,13 @@ constexpr bool advance_if_any (InputIt& first, Sentinel last,
  * @param    e...    Expressions to test the string with
  * @return   Whether all of the expressions returned true
  */
-template <typename InputIt, typename Sentinel,
-          scannable_expression<InputIt, Sentinel>... Exp>
-constexpr bool advance_join_if (InputIt& first, Sentinel last,
-                                Exp... e)
+template <forward_iterator Iterator,
+          sentinel_for<Iterator> Sentinel,
+          scannable_expression<Iterator, Sentinel>... Expression>
+constexpr bool advance_join_if (Iterator& first, Sentinel last,
+                                Expression... e)
 {
-    InputIt copy = first;
+    Iterator copy = first;
 
     if (!(... && advance_if(copy, last, e)))    return false;
 
@@ -600,10 +625,12 @@ constexpr bool advance_join_if (mutable_range& r, Args&&... args)
  * @param    args...   Arguments passed to *e*
  * @return   Always returns true
  */
-template <typename InputIt, typename Sentinel,
-          typename... Args, scannable_expression<InputIt, Sentinel, Args...> Exp>
-constexpr bool advance_while_not (InputIt& first, Sentinel last,
-                                  Exp e, Args... args)
+template <forward_iterator Iterator,
+          sentinel_for<Iterator> Sentinel,
+          typename... Args,
+          scannable_expression<Iterator, Sentinel, Args...> Expression>
+constexpr bool advance_while_not (Iterator& first, Sentinel last,
+                                  Expression e, Args... args)
 {
     while (advance_if_not(first, last, e, args...));
     return true;
@@ -635,10 +662,12 @@ constexpr bool advance_while_not (mutable_range& r, Args&&... args)
  * @param    args...   Arguments passed to *e*
  * @return   Whether at least *min* repeats were successful
  */
-template <typename InputIt, typename Sentinel,
-          typename... Args, scannable_expression<InputIt, Sentinel, Args...> Exp>
-constexpr bool advance_repeating (InputIt& first, Sentinel last,
-                                  Exp e, Args... args,
+template <forward_iterator Iterator,
+          sentinel_for<Iterator> Sentinel,
+          typename... Args,
+          scannable_expression<Iterator, Sentinel, Args...> Expression>
+constexpr bool advance_repeating (Iterator& first, Sentinel last,
+                                  Expression e, Args... args,
                                   size_t min = 0, size_t max = -1)
 {
     if (max < min)    return false;
@@ -673,10 +702,12 @@ constexpr bool advance_repeating (mutable_range& r, Args&&... args)
  * @param    args...   Arguments passed to *e*
  * @return   Whether at least *min* repeats were successful
  */
-template <typename InputIt, typename Sentinel,
-          typename... Args, scannable_expression<InputIt, Sentinel, Args...> Exp>
-constexpr bool advance_min_if (InputIt& first, Sentinel last,
-                               Exp e, Args... args,
+template <forward_iterator Iterator,
+          sentinel_for<Iterator> Sentinel,
+          typename... Args,
+          scannable_expression<Iterator, Sentinel, Args...> Expression>
+constexpr bool advance_min_if (Iterator& first, Sentinel last,
+                               Expression e, Args... args,
                                size_t min = 0)
 {
     if (!advance_n_if(first, last, e, min, args...))    return false;
@@ -708,10 +739,12 @@ constexpr bool advance_min_if (mutable_range& r, Args&&... args)
  * @param    args...   Arguments passed to *e*
  * @return   Whether the character was found
  */
-template <typename InputIt, typename Sentinel,
-          typename... Args, compound_scannable_expression<InputIt, Sentinel, Args...> Exp>
-constexpr bool advance_to_if_found (InputIt& first, Sentinel last,
-                                    Exp e, Args&&... args)
+template <forward_iterator Iterator,
+          sentinel_for<Iterator> Sentinel,
+          typename... Args,
+          compound_scannable_expression<Iterator, Sentinel, Args...> Expression>
+constexpr bool advance_to_if_found (Iterator& first, Sentinel last,
+                                    Expression e, Args&&... args)
 {
     // Once ranges are standard, replace with range version of std::find_if
     auto copy = first;
@@ -725,8 +758,8 @@ constexpr bool advance_to_if_found (InputIt& first, Sentinel last,
 }
 
 
-template <typename InputIt>
-constexpr bool advance_to_if_found (InputIt& first, InputIt last,
+template <forward_iterator Iterator>
+constexpr bool advance_to_if_found (Iterator& first, Iterator last,
                                     string_view literal)
 {
     const auto searcher = std::boyer_moore_searcher(literal.begin(), literal.end());
@@ -739,8 +772,8 @@ constexpr bool advance_to_if_found (InputIt& first, InputIt last,
 }
 
 
-template <typename InputIt>
-constexpr bool advance_to_if_found (InputIt& first, InputIt last,
+template <forward_iterator Iterator>
+constexpr bool advance_to_if_found (Iterator& first, Iterator last,
                                     char c)
 {
     auto it = std::find(first, last, c);
@@ -751,8 +784,8 @@ constexpr bool advance_to_if_found (InputIt& first, InputIt last,
 }
 
 
-template <typename InputIt>
-constexpr bool advance_to_if_found (InputIt& first, InputIt last,
+template <forward_iterator Iterator>
+constexpr bool advance_to_if_found (Iterator& first, Iterator last,
                                     char_predicate p)
 {
     auto it = std::find_if(first, last, p);
@@ -786,10 +819,12 @@ constexpr bool advance_to_if_found (mutable_range& r, Args&&... args)
  * @param    args...   Arguments passed to *e*
  * @return   Whether the character was found
  */
-template <typename InputIt, typename Sentinel,
-          typename... Args, scannable_expression<InputIt, Sentinel, Args...> Exp>
-constexpr bool advance_past_if_found (InputIt& first, Sentinel last,
-                                      Exp e, Args... args)
+template <forward_iterator Iterator,
+          sentinel_for<Iterator> Sentinel,
+          typename... Args,
+          scannable_expression<Iterator, Sentinel, Args...> Expression>
+constexpr bool advance_past_if_found (Iterator& first, Sentinel last,
+                                      Expression e, Args... args)
 {
     // Once ranges are standard, replace with range version of std::find_if
     auto copy = first;
@@ -804,8 +839,8 @@ constexpr bool advance_past_if_found (InputIt& first, Sentinel last,
 }
 
 
-template <typename InputIt, typename T>
-constexpr bool advance_past_if_found (InputIt& first, InputIt last,
+template <forward_iterator Iterator, typename T>
+constexpr bool advance_past_if_found (Iterator& first, Iterator last,
                                       string_view literal)
 {
     const T searcher = std::boyer_moore_searcher(literal.begin(), literal.end());
@@ -818,8 +853,8 @@ constexpr bool advance_past_if_found (InputIt& first, InputIt last,
 }
 
 
-template <typename InputIt>
-constexpr bool advance_past_if_found (InputIt& first, InputIt last,
+template <forward_iterator Iterator>
+constexpr bool advance_past_if_found (Iterator& first, Iterator last,
                                       char c)
 {
     auto it = std::find(first, last, c);
@@ -830,8 +865,8 @@ constexpr bool advance_past_if_found (InputIt& first, InputIt last,
 }
 
 
-template <typename InputIt>
-constexpr bool advance_past_if_found (InputIt& first, InputIt last,
+template <forward_iterator Iterator>
+constexpr bool advance_past_if_found (Iterator& first, Iterator last,
                                       char_predicate p)
 {
     auto it = std::find_if(first, last, p);

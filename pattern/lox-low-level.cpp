@@ -8,9 +8,9 @@
 #include <string>
 #include <string_view>
 #include <vector>      // token list
-#include "scan_view.h"
-#include "scanning-algorithms.h"
+#include "../include/scan_view.h"
 #include "../include/syntax.h"
+#include "../include/scanning-algorithms.h"
 #include "lox-common.h"
 
 using std::string_view;
@@ -63,7 +63,7 @@ lox_token string (scan_view& s)
     if (s.eof())    return {TokenType::ERROR, "Unterminated string."s, s.skipped()};
     ++s;
 
-    return {TokenType::STRING, s.skipped(1, 2), s.skipped()};
+    return {TokenType::STRING, s.skipped(1, 1), s.skipped()};
 }
 
 

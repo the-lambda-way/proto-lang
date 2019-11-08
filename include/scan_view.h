@@ -37,7 +37,7 @@ public:
     using const_pointer          = const value_type*;
     using const_reference        = const value_type&;
     using const_iterator         = const iterator_type&;
-    using iterator               = iterator_type&;
+    using iterator               = iterator_type;
     using const_reverse_iterator = std::reverse_iterator<const_iterator>&;
     using reverse_iterator       = std::reverse_iterator<iterator>;
     using sentinel_t             = container_type::iterator;
@@ -59,6 +59,10 @@ public:
 
     constexpr basic_scan_view (container_type sequence, iterator_type position) noexcept
         : sequence {sequence}, cursor {position}
+    {}
+
+    constexpr basic_scan_view (CharT& first, CharT end) noexcept
+        : sequence {std::basic_string_view<CharT> {first, end - first}}, cursor {first}
     {}
 
     constexpr basic_scan_view& operator= (const basic_scan_view&) noexcept = default;

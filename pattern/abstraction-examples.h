@@ -69,7 +69,7 @@ number_token number2 (scan_view& s)
     if (!advance_if(s, is_digit))    return none_token;
     advance_while(s, is_digit);
 
-    if (s != '.' || !is_digit(s[1]))    return {TokenType::INTEGER, std::stoi(s.copy_skipped())};
+    if (*s != '.' || !is_digit(s[1]))    return {TokenType::INTEGER, std::stoi(s.copy_skipped())};
 
     // Decimal
     s += 2;
@@ -89,22 +89,18 @@ number_token number2 (scan_view& s)
 namespace AlgorithmSugarExample
 {
 
-// To use unary operators (like Kleene star *), a function must be converted to a scanning_expression
-scanning_expression digit {is_digit};
-
 number_token number3 (scan_view& s)
 {
     s.save();
 
     // Integer
-    if (!(s >> digit))    return none_token;
-    s >> *digit;
+    if (!(s >> is_digit))    return none_token;
+    s >> *is_digit;
 
-    if (s != '.' || !is_digit(s[1]))    return {TokenType::INTEGER, std::stoi(s.copy_skipped())};
+    if (!(s >> '.' & is_digit))    return {TokenType::INTEGER, std::stoi(s.copy_skipped())};
 
     // Decimal
-    s += 2;
-    s >> *digit;
+    s >> *is_digit;
 
     return {TokenType::DECIMAL, std::stod(s.copy_skipped())};
 }

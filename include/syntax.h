@@ -15,7 +15,7 @@
 #ifndef SYNTAX
 #define SYNTAX
 
-#include <fstream>    // get_file_contents
+#include <fstream>    // file_to_string
 #include <string>
 
 
@@ -84,7 +84,7 @@ struct source_position
  * @param    span    Number of characters to retrieve
  * @return   Contents retrieved from file
  */
-std::string get_file_contents (const std::string& path, size_t start = 0, size_t span = -1)
+std::string file_to_string (const std::string& path, size_t start = 0, size_t span = -1)
 {
     using namespace std;
 
@@ -113,9 +113,9 @@ std::string get_file_contents (const std::string& path, size_t start = 0, size_t
  * @param    s      Position and span to retrieve from
  * @return   Contents retrieved from file
  */
-std::string get_file_contents (const std::string& path, source_position s)
+std::string file_to_string (const std::string& path, source_position s)
 {
-    return get_file_contents (path, s.position, s.span);
+    return file_to_string (path, s.position, s.span);
 }
 
 
@@ -191,7 +191,7 @@ struct source_location
 
     source_location (const char* path, int position)
     {
-        std::string source = get_file_contents(path, 0, position);
+        std::string source = file_to_string(path, 0, position);
         convert_from(source.data(), source.data() + position);
     }
 

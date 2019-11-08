@@ -154,10 +154,10 @@ void pad_right (std::string& s, int amount)
     s.append(amount, ' ');
 }
 
-std::string to_string (const std::monostate s)      { return "";                }
-std::string to_string (const std::string s)         { return s;                 }
+std::string to_string (const std::monostate s)      { return "";                     }
+std::string to_string (const std::string s)         { return s;                      }
 std::string to_string (const std::string_view s)    { return {s.data(), s.length()}; }
-std::string to_string (const double d)              { return std::to_string(d); }
+std::string to_string (const double d)              { return std::to_string(d);      }
 std::string to_string (const source_location s)
 {
     return "[" + std::to_string(s.line) + ", " + std::to_string(s.column) + "]";
@@ -179,7 +179,7 @@ std::string to_string (const lox_token t, const CharT* data)
          + (std::holds_alternative<std::monostate>(t.value)
             ? to_string(t.tag)
             : t.tag == TokenType::STRING
-                ? "\"" + to_string(t.value) + "\""
+                ? to_string(t.lexeme)
                 : to_string(t.value)
         );
 
@@ -248,7 +248,7 @@ void run (const std::string& source)
 
 void run_file (std::string path)
 {
-    const std::string code = get_file_contents(path);
+    const std::string code = file_to_string(path);
     run(code);
 
     if (lox_system.had_error)            exit(EXIT_FAILURE);

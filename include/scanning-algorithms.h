@@ -17,6 +17,7 @@
 #define SCANNING_ALGORITHMS
 
 #include <algorithm>      // std::find
+#include <string>
 #include <string_view>
 #include <type_traits>    // std::remove_reference, std::is_same
 #include "concepts-kludge.h"
@@ -50,7 +51,7 @@ concept bool atomic_scannable_expression =
 
 
 /**
- * A scanning algorithm receives a sequence of characters and returns true if it matches a criteria.
+ * A scanning algorithm receives a string and returns true if it matches a criteria.
  *
  * @param    first     Iterator to the start of a string
  * @param    last      Sentinel to the end of the string
@@ -76,6 +77,8 @@ template <typename T,
           typename... Args>
 concept bool compound_scannable_expression =
     std::is_same_v<T, string_view> ||
+    std::is_same_v<T, std::string> ||
+    std::is_same_v<T, const char*> ||
     scanning_algorithm<T, Iterator, Sentinel, Args...>;
 
 
@@ -112,54 +115,6 @@ constexpr bool starts_with (Iterator first, Sentinel last,
 
 
 /**
- * Bounded check, whether a string begins with a certain string.
- *
- * @param    first     Iterator to the start of a string
- * @param    last      Sentinel to the end of the string
- * @param    literal   String to compare equal with
- * @return   Whether *literal* compared equal
- */
-template <forward_iterator Iterator,
-          sentinel_for<Iterator> Sentinel>
-constexpr bool starts_with (Iterator first, Sentinel last,
-                            string_view literal)
-{
-    if constexpr (!starts_with(first, last, literal.front()))    return false;
-    if constexpr (last - first > literal.length())               return false;
-
-    ++first;
-
-    for (auto i = literal.begin() + 1;    i != literal.end();    ++i, ++first)
-        if (*first != *i)    return false;
-
-    return true;
-}
-
-
-/**
- * @name scan_with
- * Delegates the appropriate function call for various scannable expressions
- */
-///@{
-
-/**
- * Bounded check, whether a string begins with a certain character.
- *
- * @param    first   Iterator to the start of a string
- * @param    last    Sentinel to the end of the string
- * @param    c       Character to compare equal with
- * @return   Whether the character compared equal
- */
-template <forward_iterator Iterator,
-          sentinel_for<Iterator> Sentinel>
-constexpr bool scan_with (Iterator first, Sentinel last,
-                          char c)
-{
-    return starts_with(first, last, c);
-}
-
-
-/**
  * Bounded check, whether the first character of a string satisfies a predicate.
  *
  * @param    first     Iterator to the start of a string
@@ -172,15 +127,92 @@ template <forward_iterator Iterator,
           sentinel_for<Iterator> Sentinel,
           typename... Args,
           char_predicate<Args...> Predicate>
-constexpr bool scan_with (Iterator first, Sentinel last,
-                          Predicate p, Args&&... args)
+constexpr bool starts_with (Iterator first, Sentinel last,
+                            Predicate p, Args&&... args)
 {
     return (first < last && p(*first, forward<Args>(args)...));
 }
 
 
+
+// ---------------------------------------------------------------------------------------------------------------------
+// String traversal
+// ---------------------------------------------------------------------------------------------------------------------
 /**
- * Bounded check, whether a string begins with a certain string.
+ * Bounded check, whether the first character of a string satisfies a predicate.
+ *
+ * @param    first     Iterator to the start of a string
+ * @param    last      Sentinel to the end of the string
+ * @param    p         Predicate to test the string with
+ * @param    args...   Arguments passed to *p*
+ * @return   Whether the predicate returned true
+ */
+template <forward_iterator Iterator,
+          sentinel_for<Iterator> Sentinel,
+          typename... Args,
+          atomic_scannable_expression<Args...> Expression>
+constexpr bool scan_with (Iterator& first, Sentinel last,
+                          Expression e, Args&&... args)
+{
+    return starts_with(first, last, e, forward<Args>(args)...);
+}
+
+
+/**
+ * Advances an iterator to a string as long as it matches another string, returning true if the second string was fully
+ * traversed.
+ *
+ * @param    first     Iterator to the start of a string
+ * @param    last      Sentinel to the end of the string
+ * @param    literal   String to compare equal with
+ * @return   Whether *literal* compared equal
+ */
+template <forward_iterator Iterator,
+          sentinel_for<Iterator> Sentinel>
+constexpr bool scan_with (Iterator& first, Sentinel last,
+                          const char* literal)
+{
+    if (!starts_with(first, last, *literal))    return false;
+
+    ++first;
+    ++literal;
+
+    for ( ;    *literal != '\0' && first != last;    ++literal, ++first)
+        if (*first != *literal)    return false;
+
+    return true;
+}
+
+
+/**
+ * Advances an iterator to a string as long as it matches another string, returning true if the second string was fully
+ * traversed.
+ *
+ * @param    first     Iterator to the start of a string
+ * @param    last      Sentinel to the end of the string
+ * @param    literal   String to compare equal with
+ * @return   Whether *literal* compared equal
+ */
+template <forward_iterator Iterator,
+          sentinel_for<Iterator> Sentinel>
+constexpr bool scan_with (Iterator& first, Sentinel last,
+                          string_view literal)
+{
+    if (!starts_with(first, last, literal.front()))    return false;
+    if (last - first > literal.length())               return false;
+
+    ++first;
+
+    for (auto i = literal.begin() + 1;    i != literal.end();    ++i, ++first)
+        if (*first != *i)    return false;
+
+    return true;
+}
+
+
+/**
+ * Advances an iterator to a string as long as it matches another string, returning true if the second string was fully
+ * traversed.
  *
  * @param    first     Iterator to the start of a string
  * @param    last      Sentinel to the end of the string
@@ -191,14 +223,15 @@ constexpr bool scan_with (Iterator first, Sentinel last,
 template <forward_iterator Iterator,
           sentinel_for<Iterator> Sentinel>
 constexpr bool scan_with (Iterator& first, Sentinel last,
-                          string_view literal)
+                          std::string literal)
 {
-    return starts_with(&first, last, literal);
+    return scan_with(first, last, string_view {literal.data(), literal.length()});
 }
 
 
 /**
- * Checks whether a sequence at the beginning of a string satisfies a predicate.
+ * Checks whether a sequence at the beginning of a string satisfies a predicate. The predicate should advance the
+ * iterator by the length of the match.
  *
  * @param    first     Iterator to the start of a string
  * @param    last      Sentinel to the end of the string
@@ -215,7 +248,6 @@ constexpr bool scan_with (Iterator& first, Sentinel last,
 {
     return f(first, last, forward<Args>(args)...);
 }
-///@}
 
 
 // ---------------------------------------------------------------------------------------------------------------------

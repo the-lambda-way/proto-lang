@@ -23,7 +23,8 @@ concept bool same_as = std::is_same_v<T, U> && std::is_same_v<U, T>;
 template <class From, class To>
 concept bool convertible_to =
     std::is_convertible_v<From, To> &&
-    requires(From (&f)()) {
+    requires (From (&f)())
+    {
         static_cast<To>(f());
     };
 

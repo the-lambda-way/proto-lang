@@ -40,6 +40,7 @@ auto identifier     = join(alpha, opt(alpha_nums));
 auto digits         = min(1, is_digit);
 auto number         = join(digits, opt(join('.', digits)));
 auto partial_string = join('"', while_not('"'));
+auto comment        = join("//", while_not('\n'));
 
 }
 
@@ -115,7 +116,7 @@ std::vector<lox_token> scan_tokens (const std::string& source)
                                  : tokens.emplace_back(GREATER,       empty,  s.skipped());
                        break;
             case '/' :
-                if (*s == '/')    advance_while_not(s, '\n');
+                if (*s == '/')    LoxScan::comment(--s);
                 else              tokens.emplace_back(SLASH, empty, s.skipped());
                 break;
 

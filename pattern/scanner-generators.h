@@ -5,30 +5,15 @@
 #define PatLib PL
 #endif
 
-#include <string_view>
 #include <tuple>          // scanner-type parameters
 #include <utility>        // scanner-type index_sequence
 #include "../include/scanning-algorithms.h"
-#include "../include/scan_view.h"
 
 using std::forward;
 using std::move;
-using std::string_view;
 
 
 namespace PatLib {
-
-
-// ---------------------------------------------------------------------------------------------------------------------
-//  Concepts
-// ---------------------------------------------------------------------------------------------------------------------
-// template <typename Exp>
-// concept bool scanner =
-//     requires (Exp e, scan_view& source)
-//     {
-//         { e(source)                       } -> bool;
-//         { e(source.begin(), source.end()) } -> bool;
-//     };
 
 
 // ---------------------------------------------------------------------------------------------------------------------

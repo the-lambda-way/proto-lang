@@ -6,7 +6,6 @@
 
 // A scouting iterator is a pair of iterators designed for 2-stage traversal, where one iterator progresses while the
 //     other maintains a previous position.
-// Can be used as a range, if you wish to iterate over the span between the two iterators.
 
 // Based on the design of __normal_iterator from GCC 9 (stl_iterator.h)
 // Container is used to distinguish iterators of containers with the same underlying type

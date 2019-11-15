@@ -23,10 +23,10 @@ using namespace std::string_literals;
 // ---------------------------------------------------------------------------------------------------------------------
 //  Definitions
 // ---------------------------------------------------------------------------------------------------------------------
-constexpr bool is_digit (char c)            { return '0' <= c && c <= '9'; }
-constexpr bool is_alpha (char c)            { return ('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z') || c == '_'; }
-constexpr bool is_alpha_numeric (char c)    { return is_alpha(c) || is_digit(c); }
-constexpr bool is_whitespace (char c)       { return c == ' ' || c == '\t' || c == '\r'; }
+constexpr bool digit (char c)            { return '0' <= c && c <= '9'; }
+constexpr bool alpha (char c)            { return ('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z') || c == '_'; }
+constexpr bool alpha_numeric (char c)    { return alpha(c) || digit(c); }
+constexpr bool whitespace (char c)       { return c == ' ' || c == '\t' || c == '\r'; }
 
 
 namespace LoxScan
@@ -34,10 +34,9 @@ namespace LoxScan
 
 using namespace PatLib::Scan;
 
-auto alpha          = when(is_alpha);
-auto alpha_nums     = while_it(is_alpha_numeric);
+auto alpha_nums     = many(alpha_numeric);
 auto identifier     = join(alpha, opt(alpha_nums));
-auto digits         = min(1, is_digit);
+auto digits         = at_least(1, digit);
 auto number         = join(digits, opt(join('.', digits)));
 auto partial_string = join('"', while_not('"'));
 auto comment        = join("//", while_not('\n'));
@@ -113,7 +112,7 @@ std::vector<lox_token> scan_tokens (const std::string& source)
                                  : tokens.emplace_back(LESS,          empty, s.skipped());
                        break;
             case '>' : *s == '=' ? tokens.emplace_back(GREATER_EQUAL, empty, (++s).skipped())
-                                 : tokens.emplace_back(GREATER,       empty,  s.skipped());
+                                 : tokens.emplace_back(GREATER,       empty, s.skipped());
                        break;
             case '/' :
                 if (*s == '/')    LoxScan::comment(--s);
@@ -129,13 +128,14 @@ std::vector<lox_token> scan_tokens (const std::string& source)
                        break;
 
             default :
-                if      (is_digit(c))    tokens.emplace_back(number(--s));
-                else if (is_alpha(c))    tokens.emplace_back(identifier(--s));
-                else                     tokens.emplace_back(ERROR, "Unexpected character: "s, s.skipped());
+                if      (digit(c))    tokens.emplace_back(number(--s));
+                else if (alpha(c))    tokens.emplace_back(identifier(--s));
+                else                  tokens.emplace_back(ERROR, "Unexpected character: "s, s.skipped());
                 break;
         } // switch
     } // while
 
+    s.save();
     tokens.emplace_back(TokenType::END, empty, s.skipped());
     return tokens;
 }

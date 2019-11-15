@@ -16,11 +16,11 @@ using std::forward;
 using namespace concepts;    // type_traits.hpp
 
 
-template <class T, class U>
+template <typename T, typename U>
 concept bool same_as = std::is_same_v<T, U> && std::is_same_v<U, T>;
 
 
-template <class From, class To>
+template <typename From, typename To>
 concept bool convertible_to =
     std::is_convertible_v<From, To> &&
     requires (From (&f)())
@@ -29,14 +29,14 @@ concept bool convertible_to =
     };
 
 
-template <class T, class U>
+template <typename T, typename U>
 concept bool common_reference_with =
     same_as<common_reference_t<T, U>, common_reference_t<U, T>> &&
     convertible_to<T, common_reference_t<T, U>> &&
     convertible_to<U, common_reference_t<T, U>>;
 
 
-template <class T>
+template <typename T>
 concept bool swappable =
     requires (T& a, T& b)
     {
@@ -44,7 +44,7 @@ concept bool swappable =
     };
 
 
-template <class T, class U>
+template <typename T, typename U>
 concept bool swappable_with =
     common_reference_with<
         const std::remove_reference_t<T>&,
@@ -58,9 +58,7 @@ concept bool swappable_with =
     };
 
 
-
-
-template <class LHS, class RHS>
+template <typename LHS, typename RHS>
 concept bool assignable_from =
     std::is_lvalue_reference_v<LHS>          &&
     common_reference_with<
@@ -72,21 +70,21 @@ concept bool assignable_from =
     };
 
 
-template <class T>
+template <typename T>
 concept bool destructible = std::is_nothrow_destructible_v<T>;
 
 
-template <class T, class... Args>
+template <typename T, typename... Args>
 concept bool constructible_from =
     destructible<T> && std::is_constructible_v<T, Args...>;
 
 
-template <class T>
+template <typename T>
 concept bool move_constructible =
     constructible_from<T, T> && convertible_to<T, T>;
 
 
-template <class T>
+template <typename T>
 concept bool movable =
     std::is_object_v<T>         &&
     move_constructible<T>  &&
@@ -94,7 +92,7 @@ concept bool movable =
     swappable<T>;
 
 
-template <class B>
+template <typename B>
 concept bool boolean =
     movable<std::remove_cvref_t<B>> &&
     requires (const std::remove_reference_t<B>& b1,
@@ -118,7 +116,7 @@ concept bool boolean =
     };
 
 
-template <class T, class U>
+template <typename T, typename U>
 concept bool weakly_equality_comparable_with =
     requires (const std::remove_reference_t<T>& t,
               const std::remove_reference_t<U>& u)
@@ -130,11 +128,11 @@ concept bool weakly_equality_comparable_with =
     };
 
 
-template <class T>
+template <typename T>
 concept bool equality_comparable = weakly_equality_comparable_with<T, T>;
 
 
-template <class T, class U>
+template <typename T, typename U>
 concept bool equality_comparable_with =
     equality_comparable<T>                      &&
     equality_comparable<U>                      &&
@@ -148,39 +146,39 @@ concept bool equality_comparable_with =
     weakly_equality_comparable_with<T, U>;
 
 
-template <class T>
+template <typename T>
 concept bool destructible = std::is_nothrow_destructible_v<T>;
 
 
-template <class T, class... Args>
+template <typename T, typename... Args>
 concept bool constructible_from =
     destructible<T> && std::is_constructible_v<T, Args...>;
 
 
-template <class T>
+template <typename T>
 concept bool default_constructible = constructible_from<T>;
 
 
-template <class T>
+template <typename T>
 concept bool copy_constructible =
     move_constructible<T>                                          &&
-    constructible_from<T, T&> && convertible_to<T&, T>             &&
+    constructible_from<T, T&>       && convertible_to<T&, T>       &&
     constructible_from<T, const T&> && convertible_to<const T&, T> &&
-    constructible_from<T, const T> && convertible_to<const T, T>;
+    constructible_from<T, const T>  && convertible_to<const T, T>;
 
 
-template <class T>
+template <typename T>
 concept bool copyable =
     copy_constructible<T> &&
     movable<T>            &&
     assignable_from<T&, const T&>;
 
 
-template <class T>
+template <typename T>
 concept bool semiregular = copyable<T> && default_constructible<T>;
 
 
-template <class T>
+template <typename T>
 concept bool regular = semiregular<T> && equality_comparable<T>;
 
 
@@ -188,7 +186,7 @@ template <typename T>
 using iter_difference_t = typename std::iterator_traits<T>::difference_type;
 
 
-template <class I>
+template <typename I>
 concept bool weakly_incrementable =
     default_constructible<I> &&
     movable<I>               &&
@@ -200,7 +198,7 @@ concept bool weakly_incrementable =
     };
 
 
-template <class I>
+template <typename I>
 concept bool incrementable =
     regular<I>              &&
     weakly_incrementable<I> &&
@@ -210,7 +208,7 @@ concept bool incrementable =
     };
 
 
-template <class T>
+template <typename T>
 concept bool dereferenceable =
     requires (T t)
     {
@@ -218,14 +216,14 @@ concept bool dereferenceable =
     };
 
 
-template <class T>
+template <typename T>
 concept bool readable =
     requires (T t)
     {
         { *t } -> T;
     };
 
-template <class T>
+template <typename T>
 concept bool readable =
   requires
   {
@@ -235,7 +233,7 @@ concept bool readable =
   common_reference_with<typename std::iterator_traits<T>::reference&&, typename std::iterator_traits<T>::value_type&>;
 
 
-template <class I, class T>
+template <typename I, typename T>
 concept bool writeable =
     dereferenceable<I> &&
     requires (I&& i, T&& t)
@@ -245,19 +243,19 @@ concept bool writeable =
     };
 
 
-template <class I>
+template <typename I>
 concept bool iterator =
     dereferenceable<I> && weakly_incrementable<I>;
 
 
-template <class S, class I>
+template <typename S, typename I>
 concept bool sentinel_for =
     semiregular<S> &&
     iterator<I>    &&
     weakly_equality_comparable_with<I, S>;
 
 
-template <class S, class I>
+template <typename S, typename I>
 concept bool sized_sentinel_for =
     sentinel_for<I, S> &&
     requires (I i, S s)
@@ -267,11 +265,11 @@ concept bool sized_sentinel_for =
     };
 
 
-template <class I>
+template <typename I>
 concept bool input_iterator = iterator<I> && readable<I>;
 
 
-template <class I, class T>
+template <typename I, typename T>
 concept bool output_iterator =
     iterator<I>     &&
     writeable<I, T> &&
@@ -281,14 +279,14 @@ concept bool output_iterator =
     };
 
 
-template <class I>
+template <typename I>
 concept bool forward_iterator =
     input_iterator<I>  &&
     incrementable<I>   &&
     sentinel_for<I, I>;
 
 
-template <class I>
+template <typename I>
 concept bool bidirectional_iterator =
     forward_iterator<I> &&
     requires (I i)
@@ -310,11 +308,11 @@ concept bool totally_ordered =
     };
 
 
-template <class T>
+template <typename T>
 using iter_reference_t = decltype(*std::declval<T&>());
 
 
-template <class I>
+template <typename I>
 concept bool random_access_iterator =
     bidirectional_iterator<I> &&
     totally_ordered<I>        &&

@@ -218,19 +218,13 @@ concept bool dereferenceable =
 
 template <typename T>
 concept bool readable =
-    requires (T t)
-    {
-        { *t } -> T;
-    };
-
-template <typename T>
-concept bool readable =
   requires
   {
     typename std::iterator_traits<T>::value_type;
     typename std::iterator_traits<T>::reference;
   } &&
-  common_reference_with<typename std::iterator_traits<T>::reference&&, typename std::iterator_traits<T>::value_type&>;
+  common_reference_with<typename std::iterator_traits<T>::reference&&,
+                        typename std::iterator_traits<T>::value_type&>;
 
 
 template <typename I, typename T>

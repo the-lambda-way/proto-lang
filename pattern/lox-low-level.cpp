@@ -103,7 +103,7 @@ std::vector<lox_token> scan_tokens (const std::string& source) {
                                  : tokens.emplace_back(LESS,          empty, s.skipped());
                        break;
             case '>' : *s == '=' ? tokens.emplace_back(GREATER_EQUAL, empty, (++s).skipped())
-                                 : tokens.emplace_back(GREATER,       empty,  s.skipped());
+                                 : tokens.emplace_back(GREATER,       empty, s.skipped());
                        break;
 
             case '/' :
@@ -130,6 +130,7 @@ std::vector<lox_token> scan_tokens (const std::string& source) {
         }
     }
 
+    s.save();
     tokens.emplace_back(TokenType::END, empty, s.skipped());
     return tokens;
 }

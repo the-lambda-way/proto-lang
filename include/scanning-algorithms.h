@@ -268,7 +268,7 @@ template <forward_iterator Iterator,
           typename... Args,
           atomic_scannable_expression<Args...> Expression>
 constexpr bool advance_if (Iterator& first, Sentinel last,
-                           Expression e, Args... args)
+                           Expression e, Args&&... args)
 {
     if (!scan_with(first, last, e, forward<Args>(args)...))    return false;
     ++first;

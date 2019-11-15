@@ -1,26 +1,33 @@
 #ifndef SCANNER_GENERATORS
 #define SCANNER_GENERATORS
 
-#ifndef PL
-#define PatLib PL
-#endif
-
-#include <tuple>          // scanner-type parameters
-#include <utility>        // scanner-type index_sequence
+#include <cstring>    // strlen
+#include <tuple>      // scanner-type parameters
+#include <utility>    // scanner-type index_sequence
 #include "../include/scanning-algorithms.h"
 
 using std::forward;
 using std::move;
 
+#ifndef PL
+#define PatLib PL
+#endif
+
 
 namespace PatLib {
 
-
-// ---------------------------------------------------------------------------------------------------------------------
-// Scanners
-// ---------------------------------------------------------------------------------------------------------------------
+/**
+ * MAKE_SCANNER is a function-object-generator macro which can be used to bind arguments to an object that is later
+ * called to scan a string of characters.
+ *
+ * @param     params   Parameters to bind to the object upon instantiation.
+ * @param     r        Mutable range representing a string
+ * @param     first    Iterator to the start of a string
+ * @param     last     Sentinel to the end of the string
+ * @returns   Whether the scan was successful
+ */
 #define MAKE_SCANNER(class_name, function_name)                                                  \
-    template <class... Parameters>                                                               \
+    template <typename... Parameters>                                                               \
     class class_name                                                                             \
     {                                                                                            \
     public:                                                                                      \
@@ -62,14 +69,14 @@ namespace Scan
 
 namespace Detail
 {
-    MAKE_SCANNER(when_t,        advance_if);
+    MAKE_SCANNER(lit_t,         advance_if);
     MAKE_SCANNER(opt_t,         advance_optionally);
-    MAKE_SCANNER(while_it_t,    advance_while);
+    MAKE_SCANNER(many_t,        advance_while);
     MAKE_SCANNER(while_not_t,   advance_while_not);
     MAKE_SCANNER(stop_before_t, advance_to_if_found);
     MAKE_SCANNER(until_t,       advance_past_if);
     MAKE_SCANNER(n_times_t,     advance_n_if);
-    MAKE_SCANNER(min_t,         advance_min_if);
+    MAKE_SCANNER(at_least_t,    advance_min_if);
     MAKE_SCANNER(at_most_t,     advance_max_if);
     MAKE_SCANNER(rep_t,         advance_repeating);
     MAKE_SCANNER(any_t,         advance_any_if);
@@ -78,16 +85,9 @@ namespace Detail
 
 
 template <typename Expr, typename... Args>
-auto when (Expr e, Args... args)
-{
-    return Detail::when_t(e, forward<Args>(args)...);
-}
-
-
-template <typename Expr, typename... Args>
 auto lit (Expr e, Args... args)
 {
-    return Detail::when_t(e, forward<Args>(args)...);
+    return Detail::lit_t(e, forward<Args>(args)...);
 }
 
 
@@ -99,9 +99,9 @@ auto opt (Expr e, Args... args)
 
 
 template <typename Expr, typename... Args>
-auto while_it (Expr e, Args... args)
+auto many (Expr e, Args... args)
 {
-    return Detail::while_it_t(e, forward<Args>(args)...);
+    return Detail::many_t(e, forward<Args>(args)...);
 }
 
 
@@ -134,9 +134,9 @@ auto n_times (size_t n, Expr e, Args... args)
 
 
 template <typename Expr, typename... Args>
-auto min (size_t n, Expr e, Args... args)
+auto at_least (size_t n, Expr e, Args... args)
 {
-    return Detail::min_t(e, forward<Args>(args)..., n);
+    return Detail::at_least_t(e, forward<Args>(args)..., n);
 }
 
 
@@ -169,7 +169,6 @@ auto join (Expr... e)
 
 
 } // namespace Scan
-
 
 } // namespace PatLib
 

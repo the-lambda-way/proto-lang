@@ -31,7 +31,8 @@ using std::string_view;
 /**
  * A character predicate receives a single character and returns true if it matches a criteria.
  *
- * @param   char   The first character of a string
+ * @param   char      The first character of a string
+ * @param   args...   Arguments passed to the predicate
  */
 template <typename Function, typename... Args>
 concept bool char_predicate =
@@ -683,6 +684,9 @@ constexpr bool advance_while_not (mutable_range& r, Args&&... args)
 }
 
 
+// If I can create a repeat algorithm that optimizes down to its parts, then at_least(), at_most(), n_times(), and
+// optional() can be combined into one
+
 /**
  * Advances an iterator while a string satisfies a scanning algorithm, between min and max times.
  *
@@ -831,7 +835,7 @@ constexpr bool advance_to_if_found (Iterator& first, Iterator last,
 /**
  * Range-based overload of *advance_to_if_found*.
  *
- * @param    r         Mutable range representing a character sequence
+ * @param    r         Mutable range representing a string
  * @param    args...   Arguments forwarded to *advance_to_if_found*
  * @return   The return value of the call to *advance_to_if_found*
  */

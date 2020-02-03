@@ -30,11 +30,11 @@ class scouting_iterator
 
 public:
     // Traits
-    using iterator_category = traits_type::iterator_category;
-    using value_type        = traits_type::value_type;
-    using pointer           = traits_type::pointer;
-    using reference         = traits_type::reference;
-    using difference_type   = traits_type::difference_type;
+    using iterator_category = typename traits_type::iterator_category;
+    using value_type        = typename traits_type::value_type;
+    using pointer           = typename traits_type::pointer;
+    using reference         = typename traits_type::reference;
+    using difference_type   = typename traits_type::difference_type;
     using size_type         = std::size_t;
 
 
@@ -66,12 +66,6 @@ public:
     }
 
     self_type& operator= (const Iter& i) noexcept
-    {
-        scout = i;
-        return *this;
-    }
-
-    self_type& operator= (const value_type* i) noexcept
     {
         scout = i;
         return *this;
@@ -111,7 +105,7 @@ public:
 
     self_type operator++ (int) noexcept
     {
-        return self_type {sentry, scout++};
+        return {sentry, scout++};
     }
 
     self_type& operator-- () noexcept
@@ -122,7 +116,7 @@ public:
 
     self_type operator-- (int) noexcept
     {
-        return self_type {sentry, scout--};
+        return {sentry, scout--};
     }
 
     reference operator[] (difference_type n) const noexcept
@@ -138,12 +132,12 @@ public:
 
     self_type operator+ (difference_type n) const noexcept
     {
-        return self_type {sentry, scout + n};
+        return {sentry, scout + n};
     }
 
     friend self_type operator+ (difference_type n, const self_type& i) noexcept
     {
-        return self_type {i.sentry, i.scout + n};
+        return {i.sentry, i.scout + n};
     }
 
     self_type& operator-= (difference_type n) noexcept
@@ -154,7 +148,7 @@ public:
 
     self_type operator- (difference_type n)
     {
-        return self_type {sentry, scout - n};
+        return {sentry, scout - n};
     }
 
     difference_type operator- (const Iter& i) const noexcept
@@ -281,7 +275,7 @@ inline typename scouting_iterator<IterL, Container>::difference_type
 operator- (const scouting_iterator<IterL, Container>& lhs,
            const scouting_iterator<IterR, Container>& rhs) noexcept
 {
-    return lhs.get_scout() < rhs.get_scout();
+    return lhs.get_scout() - rhs.get_scout();
 }
 
 

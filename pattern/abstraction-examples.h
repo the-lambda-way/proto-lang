@@ -40,7 +40,7 @@ number_token number (scan_view& s)
 
     while (is_digit(*s))    match += *s++;
 
-    if (*s != '.' || !is_digit(s[1]))    return {TokenType::INTEGER, std::stoi(match)};
+    if (s[0] != '.' || !is_digit(s[1]))    return {TokenType::INTEGER, std::stoi(match)};
 
     // Decimal
     match += *s++ + *s++;
@@ -81,33 +81,6 @@ number_token number2 (scan_view& s)
 // add number2 to your custom parser
 
 } // namespace AlgorithmExample
-
-
-// -------------------------
-// Algorithm syntactic sugar
-// -------------------------
-namespace AlgorithmSugarExample
-{
-
-number_token number3 (scan_view& s)
-{
-    s.save();
-
-    // Integer
-    if (!(s >> is_digit))    return none_token;
-    s >> *is_digit;
-
-    if (!(s >> '.' & is_digit))    return {TokenType::INTEGER, std::stoi(s.copy_skipped())};
-
-    // Decimal
-    s >> *is_digit;
-
-    return {TokenType::DECIMAL, std::stod(s.copy_skipped())};
-}
-
-// add number3 to your custom parser
-
-} // namespace AlgorithmSugarExample
 
 
 // -------------------------
@@ -201,7 +174,7 @@ struct number6 : AddRule<MyLang, number6>
 {
     parse_tree parse (scan_view& s)    { return match_impl(s); }
 
-    token action (parse_tree match)
+    token tokenize (parse_tree match)
     {
         auto [a, b] = match;    // a, b are string_views
 
@@ -213,7 +186,7 @@ struct number6 : AddRule<MyLang, number6>
 
 private:
     matcher match_impl = Match::seq(integer, Scan::opt(fractional));
-}
+};
 
 // myLang.parse(string_view source) automatically calls all rules added with this method
 

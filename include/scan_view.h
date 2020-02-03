@@ -4,7 +4,6 @@
 #include <string>
 #include <string_view>
 #include "../include/scouting-iterator.h"
-#include "../include/syntax.h"
 #include "scanning-algorithms.h"
 
 using std::forward;
@@ -26,11 +25,11 @@ class basic_scan_view
 
 public:
     // Iterator Traits
-    using iterator_category = iter_traits::iterator_category;
-    using value_type        = iter_traits::value_type;
-    using pointer           = iter_traits::pointer;
-    using reference         = iter_traits::reference;
-    using difference_type   = iter_traits::difference_type;
+    using iterator_category = typename iter_traits::iterator_category;
+    using value_type        = typename iter_traits::value_type;
+    using pointer           = typename iter_traits::pointer;
+    using reference         = typename iter_traits::reference;
+    using difference_type   = typename iter_traits::difference_type;
 
     // Container traits
     using traits_type            = Traits;
@@ -40,7 +39,7 @@ public:
     using iterator               = iterator_type;
     using const_reverse_iterator = std::reverse_iterator<const_iterator>&;
     using reverse_iterator       = std::reverse_iterator<iterator>;
-    using sentinel_t             = container_type::iterator;
+    using sentinel_t             = typename container_type::iterator;
     using size_type		         = difference_type;
 
     static constexpr size_type npos = size_type(-1);
@@ -61,7 +60,7 @@ public:
         : sequence {sequence}, cursor {position}
     {}
 
-    constexpr basic_scan_view (CharT& first, CharT end) noexcept
+    constexpr basic_scan_view (const CharT*& first, const CharT* end) noexcept
         : sequence {std::basic_string_view<CharT> {first, end - first}}, cursor {first}
     {}
 

@@ -12,7 +12,6 @@
  * A set of algorithms for scanning character-based sources.
  */
 
-
 #ifndef SCANNING_ALGORITHMS
 #define SCANNING_ALGORITHMS
 
@@ -31,6 +30,7 @@ using std::string_view;
 /**
  * A character predicate receives a single character and returns true if it matches a criteria.
  *
+ * @param   f         Funciton implementing the algorithm
  * @param   char      The first character of a string
  * @param   args...   Arguments passed to the predicate
  */
@@ -54,6 +54,7 @@ concept bool atomic_scannable_expression =
 /**
  * A scanning algorithm receives a string and returns true if it matches a criteria.
  *
+ * @param    f         Function implementing the algorithm
  * @param    first     Iterator to the start of a string
  * @param    last      Sentinel to the end of the string
  * @param    args...   Arguments passed to the algorithm
@@ -111,7 +112,7 @@ template <forward_iterator Iterator,
 constexpr bool starts_with (Iterator first, Sentinel last,
                             char c)
 {
-    return (first < last && *first == c);
+    return (first != last && *first == c);
 }
 
 
@@ -131,9 +132,8 @@ template <forward_iterator Iterator,
 constexpr bool starts_with (Iterator first, Sentinel last,
                             Predicate p, Args&&... args)
 {
-    return (first < last && p(*first, forward<Args>(args)...));
+    return (first != last && p(*first, forward<Args>(args)...));
 }
-
 
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -178,8 +178,8 @@ constexpr bool scan_with (Iterator& first, Sentinel last,
     ++first;
     ++literal;
 
-    for ( ;    *literal != '\0' && first != last;    ++literal, ++first)
-        if (*first != *literal)    return false;
+    while (*literal != '\0')
+        if (*first++ != *literal++)    return false;
 
     return true;
 }
@@ -220,7 +220,6 @@ constexpr bool scan_with (Iterator& first, Sentinel last,
  * @param    literal   String to compare equal with
  * @return   Whether *literal* compared equal
  */
-// Compound algorithms take the begin iterator by reference, so the iterator can advance during the predicate check.
 template <forward_iterator Iterator,
           sentinel_for<Iterator> Sentinel>
 constexpr bool scan_with (Iterator& first, Sentinel last,
@@ -708,8 +707,8 @@ constexpr bool advance_repeating (Iterator& first, Sentinel last,
 {
     if (max < min)    return false;
 
-    if (!advance_n_if(first, last, e, min, args...))    return false;
-    advance_max_if(first, last, e, max - min, args...);
+    if (!advance_n_if(first, last, e, args..., min))    return false;
+    advance_max_if(first, last, e, args..., max - min);
     return true;
 }
 
@@ -746,7 +745,7 @@ constexpr bool advance_min_if (Iterator& first, Sentinel last,
                                Expression e, Args... args,
                                size_t min = 0)
 {
-    if (!advance_n_if(first, last, e, min, args...))    return false;
+    if (!advance_n_if(first, last, e, args..., min))    return false;
     advance_while(first, last, e, args...);
     return true;
 }

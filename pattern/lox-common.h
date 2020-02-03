@@ -12,26 +12,11 @@ using std::string_view;
 using std::variant;
 
 
-// NICE_ENUM(TokenType, LEFT_PAREN, RIGHT_PAREN)
-    // Single-character tokens.
-    // LEFT_PAREN, RIGHT_PAREN, LEFT_BRACE, RIGHT_BRACE
-    // COMMA, DOT, MINUS, PLUS, SEMICOLON, SLASH, STAR,
 
-    // // One or two character tokens.
-    // BANG, BANG_EQUAL,
-    // EQUAL, EQUAL_EQUAL,
-    // GREATER, GREATER_EQUAL,
-    // LESS, LESS_EQUAL,
-
-    // // Literals.
-    // IDENTIFIER, STRING, NUMBER,
-
-    // // Keywords.
-    // AND, CLASS, ELSE, FALSE, FUN, FOR, IF, NIL, OR,
-    // PRINT, RETURN, SUPER, THIS, TRUE, VAR, WHILE,
-
-    // END
-// )
+constexpr bool is_digit        (char c)    { return '0' <= c && c <= '9'; }
+constexpr bool is_letter       (char c)    { return ('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z'); }
+constexpr bool is_alphanumeric (char c)    { return is_letter(c) || is_digit(c); }
+constexpr bool is_whitespace   (char c)    { return c == ' ' || c == '\t' || c == '\r' || '\n'; }
 
 
 enum class TokenType {
@@ -101,7 +86,7 @@ namespace TokenTypeMembers {
 }
 
 std::string to_string (TokenType type) {
-    const std::string strings[] = {
+    static const std::string strings[] = {
         "LEFT_PAREN", "RIGHT_PAREN", "LEFT_BRACE", "RIGHT_BRACE",
         "COMMA", "DOT", "MINUS", "PLUS", "SEMICOLON", "SLASH", "STAR",
         "BANG", "BANG_EQUAL",
@@ -117,7 +102,7 @@ std::string to_string (TokenType type) {
     return strings[static_cast<int>(type)];
 }
 
-const std::map<std::string, TokenType> keywords
+const std::map<string_view, TokenType> keywords
     {
         { "and",    TokenType::AND    },
         { "class",  TokenType::CLASS  },
@@ -154,23 +139,23 @@ void pad_right (std::string& s, int amount)
     s.append(amount, ' ');
 }
 
-std::string to_string (const std::monostate s)      { return "";                     }
-std::string to_string (const std::string s)         { return s;                      }
-std::string to_string (const std::string_view s)    { return {s.data(), s.length()}; }
-std::string to_string (const double d)              { return std::to_string(d);      }
+std::string to_string (const std::monostate& s)     { return "";                     }
+std::string to_string (const std::string& s)        { return s;                      }
+std::string to_string (std::string_view s)          { return {s.data(), s.length()}; }
+std::string to_string (double d)                    { return std::to_string(d);      }
 std::string to_string (const source_location s)
 {
     return "[" + std::to_string(s.line) + ", " + std::to_string(s.column) + "]";
 }
 
-std::string to_string (const lox_token_value v)
+std::string to_string (const lox_token_value& v)
 {
     return std::visit([] (auto&& arg) { return to_string(arg); }, v);
 }
 
 
 template <typename CharT>
-std::string to_string (const lox_token t, const CharT* data)
+std::string to_string (const lox_token& t, const CharT* data)
 {
     std::string msg = to_string(t.tag);
     pad_right(msg, TOKEN_STRING_PAD_LENGTH);

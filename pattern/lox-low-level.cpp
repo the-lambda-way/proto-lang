@@ -22,19 +22,12 @@ using namespace std::string_view_literals;
 // ---------------------------------------------------------------------------------------------------------------------
 //  Tokenizers
 // ---------------------------------------------------------------------------------------------------------------------
-constexpr bool is_digit (char c)            { return '0' <= c && c <= '9'; }
-constexpr bool is_alpha (char c)            { return ('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z') || c == '_'; }
-constexpr bool is_alpha_numeric (char c)    { return is_alpha(c) || is_digit(c); }
-constexpr bool is_whitespace (char c)       { return c == ' ' || c == '\t' || c == '\r'; }
-
-
 lox_token identifier (scan_view& s)
 {
-    while (is_alpha_numeric(*s))    ++s;
-
+    while (is_alphanumeric(*s))    ++s;
     string_view match = s.skipped();
 
-    auto keyword = keywords.find(to_string(match));
+    auto keyword = keywords.find(match);
 
     if (keyword != keywords.end())    return {keyword->second, empty, match};
     else                              return {TokenType::IDENTIFIER, match, match};
@@ -70,68 +63,77 @@ lox_token string (scan_view& s)
 // ---------------------------------------------------------------------------------------------------------------------
 //  Scanner
 // ---------------------------------------------------------------------------------------------------------------------
-std::vector<lox_token> scan_tokens (const std::string& source) {
+void next_token (std::vector<lox_token>& tokens, scan_view& s)
+{
+    s.save();
+    char c = *s++;
+
+    switch (c)
+    {
+        using namespace TokenTypeMembers;
+
+        // single symbols
+        case '(' : tokens.emplace_back(LEFT_PAREN,  empty, s.skipped()); break;
+        case ')' : tokens.emplace_back(RIGHT_PAREN, empty, s.skipped()); break;
+        case '{' : tokens.emplace_back(LEFT_BRACE,  empty, s.skipped()); break;
+        case '}' : tokens.emplace_back(RIGHT_BRACE, empty, s.skipped()); break;
+        case ',' : tokens.emplace_back(COMMA,       empty, s.skipped()); break;
+        case '.' : tokens.emplace_back(DOT,         empty, s.skipped()); break;
+        case '-' : tokens.emplace_back(MINUS,       empty, s.skipped()); break;
+        case '+' : tokens.emplace_back(PLUS,        empty, s.skipped()); break;
+        case ';' : tokens.emplace_back(SEMICOLON,   empty, s.skipped()); break;
+        case '*' : tokens.emplace_back(STAR,        empty, s.skipped()); break;
+
+        case ' '  :
+        case '\r' :
+        case '\t' :
+        case '\n' : break;    // Ignore whitespace
+
+
+        // double symbols
+        case '!' : *s == '=' ? tokens.emplace_back(BANG_EQUAL,    empty, (++s).skipped())
+                             : tokens.emplace_back(BANG,          empty,     s.skipped());
+                   break;
+        case '=' : *s == '=' ? tokens.emplace_back(EQUAL_EQUAL,   empty, (++s).skipped())
+                             : tokens.emplace_back(EQUAL,         empty,     s.skipped());
+                   break;
+        case '<' : *s == '=' ? tokens.emplace_back(LESS_EQUAL,    empty, (++s).skipped())
+                             : tokens.emplace_back(LESS,          empty,     s.skipped());
+                   break;
+        case '>' : *s == '=' ? tokens.emplace_back(GREATER_EQUAL, empty, (++s).skipped())
+                             : tokens.emplace_back(GREATER,       empty,     s.skipped());
+                   break;
+
+        case '/' :
+            if (*s == '/')
+                // A comment goes until the end of the line.
+                while (*s != '\n' && !s.eof())    ++s;
+            else
+                tokens.emplace_back(SLASH, empty, s.skipped());
+            break;
+
+
+        // larger tokens
+        case '"' : tokens.push_back(string(s));
+                   break;
+
+        default :
+            if      (is_digit(c))     tokens.push_back(number(s));
+            else if (is_letter(c))    tokens.push_back(identifier(s));
+            else                      tokens.emplace_back(ERROR, "Unexpected character: "s, s.skipped());
+
+    } // switch
+}
+
+
+std::vector<lox_token> scan_tokens (const std::string& source)
+{
     std::vector<lox_token> tokens;
     scan_view s {source};
 
-    while (!s.eof())
-    {
-        s.save();
-        char c = *s++;
+    while (s.has_more())    next_token(tokens, s);
 
-        switch (c)
-        {
-            using namespace TokenTypeMembers;
-
-            case '(' : tokens.emplace_back(LEFT_PAREN,  empty, s.skipped()); break;
-            case ')' : tokens.emplace_back(RIGHT_PAREN, empty, s.skipped()); break;
-            case '{' : tokens.emplace_back(LEFT_BRACE,  empty, s.skipped()); break;
-            case '}' : tokens.emplace_back(RIGHT_BRACE, empty, s.skipped()); break;
-            case ',' : tokens.emplace_back(COMMA,       empty, s.skipped()); break;
-            case '.' : tokens.emplace_back(DOT,         empty, s.skipped()); break;
-            case '-' : tokens.emplace_back(MINUS,       empty, s.skipped()); break;
-            case '+' : tokens.emplace_back(PLUS,        empty, s.skipped()); break;
-            case ';' : tokens.emplace_back(SEMICOLON,   empty, s.skipped()); break;
-            case '*' : tokens.emplace_back(STAR,        empty, s.skipped()); break;
-            case '!' : *s == '=' ? tokens.emplace_back(BANG_EQUAL,    empty, (++s).skipped())
-                                 : tokens.emplace_back(BANG,          empty, s.skipped());
-                       break;
-            case '=' : *s == '=' ? tokens.emplace_back(EQUAL_EQUAL,   empty, (++s).skipped())
-                                 : tokens.emplace_back(EQUAL,         empty, s.skipped());
-                       break;
-            case '<' : *s == '=' ? tokens.emplace_back(LESS_EQUAL,    empty, (++s).skipped())
-                                 : tokens.emplace_back(LESS,          empty, s.skipped());
-                       break;
-            case '>' : *s == '=' ? tokens.emplace_back(GREATER_EQUAL, empty, (++s).skipped())
-                                 : tokens.emplace_back(GREATER,       empty, s.skipped());
-                       break;
-
-            case '/' :
-                if (*s == '/')
-                    // A comment goes until the end of the line.
-                    while (*s != '\n' && !s.eof())    ++s;
-                else
-                    tokens.emplace_back(SLASH, empty, s.skipped());
-                break;
-
-            case ' '  :
-            case '\r' :
-            case '\t' :
-            case '\n' : break;    // Ignore whitespace.
-
-            case '"' : tokens.emplace_back(string(s));
-                       break;
-
-            default :
-                if      (is_digit(c))    tokens.emplace_back(number(s));
-                else if (is_alpha(c))    tokens.emplace_back(identifier(s));
-                else                     tokens.emplace_back(ERROR, "Unexpected character: "s, s.skipped());
-                break;
-        }
-    }
-
-    s.save();
-    tokens.emplace_back(TokenType::END, empty, s.skipped());
+    tokens.emplace_back(TokenType::END, empty);
     return tokens;
 }
 

@@ -9,12 +9,8 @@
 #include <string>
 #include <string_view>
 #include <vector>      // token list
-#include "../include/scanning-algorithms.h"
-#include "../include/scan_view.h"
-#include "../include/syntax.h"
 #include "lox-common.h"
-#include "scanner-generators.h"
-#include "../include/scouting-iterator.h"
+#include "pattern.h"
 
 using std::string_view;
 using namespace std::string_literals;
@@ -23,20 +19,12 @@ using namespace std::string_literals;
 // ---------------------------------------------------------------------------------------------------------------------
 //  Definitions
 // ---------------------------------------------------------------------------------------------------------------------
-constexpr bool digit (char c)            { return '0' <= c && c <= '9'; }
-constexpr bool alpha (char c)            { return ('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z') || c == '_'; }
-constexpr bool alpha_numeric (char c)    { return alpha(c) || digit(c); }
-constexpr bool whitespace (char c)       { return c == ' ' || c == '\t' || c == '\r'; }
-
-
 namespace LoxScan
 {
 
 using namespace PatLib::Scan;
 
-auto alpha_nums     = many(alpha_numeric);
-auto identifier     = join(alpha, opt(alpha_nums));
-auto digits         = at_least(1, digit);
+auto identifier     = join(letter, opt(many(alphanumeric)));
 auto number         = join(digits, opt(join('.', digits)));
 auto partial_string = join('"', while_not('"'));
 auto comment        = join("//", while_not('\n'));
@@ -49,7 +37,7 @@ lox_token identifier (scan_view& s)
     LoxScan::identifier(s);
     string_view match = s.skipped();
 
-    auto keyword = keywords.find(to_string(match));
+    auto keyword = keywords.find(match);
 
     if (keyword != keywords.end())    return {keyword->second, empty, match};
     else                              return {TokenType::IDENTIFIER, match, match};
@@ -78,67 +66,76 @@ lox_token string (scan_view& s)
 // ---------------------------------------------------------------------------------------------------------------------
 //  Scanner
 // ---------------------------------------------------------------------------------------------------------------------
+void next_token (std::vector<lox_token>& tokens, scan_view& s)
+{
+    s.save();
+    char c = *s++;
+
+    switch (c)
+    {
+        using namespace TokenTypeMembers;
+
+        // single symbols
+        case '(' : tokens.emplace_back(LEFT_PAREN,  empty, s.skipped()); break;
+        case ')' : tokens.emplace_back(RIGHT_PAREN, empty, s.skipped()); break;
+        case '{' : tokens.emplace_back(LEFT_BRACE,  empty, s.skipped()); break;
+        case '}' : tokens.emplace_back(RIGHT_BRACE, empty, s.skipped()); break;
+        case ',' : tokens.emplace_back(COMMA,       empty, s.skipped()); break;
+        case '.' : tokens.emplace_back(DOT,         empty, s.skipped()); break;
+        case '-' : tokens.emplace_back(MINUS,       empty, s.skipped()); break;
+        case '+' : tokens.emplace_back(PLUS,        empty, s.skipped()); break;
+        case ';' : tokens.emplace_back(SEMICOLON,   empty, s.skipped()); break;
+        case '*' : tokens.emplace_back(STAR,        empty, s.skipped()); break;
+
+        case ' '  :
+        case '\r' :
+        case '\t' :
+        case '\n' : break;    // Ignore whitespace
+
+
+        // double symbols
+        case '!' : *s == '=' ? tokens.emplace_back(BANG_EQUAL,    empty, (++s).skipped())
+                             : tokens.emplace_back(BANG,          empty,     s.skipped());
+                   break;
+        case '=' : *s == '=' ? tokens.emplace_back(EQUAL_EQUAL,   empty, (++s).skipped())
+                             : tokens.emplace_back(EQUAL,         empty,     s.skipped());
+                   break;
+        case '<' : *s == '=' ? tokens.emplace_back(LESS_EQUAL,    empty, (++s).skipped())
+                             : tokens.emplace_back(LESS,          empty,     s.skipped());
+                   break;
+        case '>' : *s == '=' ? tokens.emplace_back(GREATER_EQUAL, empty, (++s).skipped())
+                             : tokens.emplace_back(GREATER,       empty,     s.skipped());
+                   break;
+        case '/' : *s == '/' ? LoxScan::comment(--s)
+                             : tokens.emplace_back(SLASH, empty, s.skipped());
+                   break;
+
+
+        // larger tokens
+        case '"' : tokens.push_back(string(--s));
+                   break;
+
+        default :
+            if      (is_digit(c))     tokens.push_back(number(--s));
+            else if (is_letter(c))    tokens.push_back(identifier(--s));
+            else                      tokens.emplace_back(ERROR, "Unexpected character: "s, s.skipped());
+
+    } // switch
+
+}
+
+
 std::vector<lox_token> scan_tokens (const std::string& source)
 {
     std::vector<lox_token> tokens;
     scan_view s {source};
 
-    while (!s.eof())
-    {
-        s.save();
-        char c = *s++;
+    while (s.has_more())    next_token(tokens, s);
 
-        switch (c)
-        {
-            using namespace TokenTypeMembers;
-
-            case '(' : tokens.emplace_back(LEFT_PAREN,  empty, s.skipped()); break;
-            case ')' : tokens.emplace_back(RIGHT_PAREN, empty, s.skipped()); break;
-            case '{' : tokens.emplace_back(LEFT_BRACE,  empty, s.skipped()); break;
-            case '}' : tokens.emplace_back(RIGHT_BRACE, empty, s.skipped()); break;
-            case ',' : tokens.emplace_back(COMMA,       empty, s.skipped()); break;
-            case '.' : tokens.emplace_back(DOT,         empty, s.skipped()); break;
-            case '-' : tokens.emplace_back(MINUS,       empty, s.skipped()); break;
-            case '+' : tokens.emplace_back(PLUS,        empty, s.skipped()); break;
-            case ';' : tokens.emplace_back(SEMICOLON,   empty, s.skipped()); break;
-            case '*' : tokens.emplace_back(STAR,        empty, s.skipped()); break;
-            case '!' : *s == '=' ? tokens.emplace_back(BANG_EQUAL,    empty, (++s).skipped())
-                                 : tokens.emplace_back(BANG,          empty, s.skipped());
-                       break;
-            case '=' : *s == '=' ? tokens.emplace_back(EQUAL_EQUAL,   empty, (++s).skipped())
-                                 : tokens.emplace_back(EQUAL,         empty, s.skipped());
-                       break;
-            case '<' : *s == '=' ? tokens.emplace_back(LESS_EQUAL,    empty, (++s).skipped())
-                                 : tokens.emplace_back(LESS,          empty, s.skipped());
-                       break;
-            case '>' : *s == '=' ? tokens.emplace_back(GREATER_EQUAL, empty, (++s).skipped())
-                                 : tokens.emplace_back(GREATER,       empty, s.skipped());
-                       break;
-            case '/' :
-                if (*s == '/')    LoxScan::comment(--s);
-                else              tokens.emplace_back(SLASH, empty, s.skipped());
-                break;
-
-            case ' '  :
-            case '\r' :
-            case '\t' :
-            case '\n' : break;    // Ignore whitespace.
-
-            case '"' : tokens.emplace_back(string(--s));
-                       break;
-
-            default :
-                if      (digit(c))    tokens.emplace_back(number(--s));
-                else if (alpha(c))    tokens.emplace_back(identifier(--s));
-                else                  tokens.emplace_back(ERROR, "Unexpected character: "s, s.skipped());
-                break;
-        } // switch
-    } // while
-
-    s.save();
-    tokens.emplace_back(TokenType::END, empty, s.skipped());
+    tokens.emplace_back(TokenType::END, empty);
     return tokens;
 }
+
 
 
 int main (int argc, char* argv[]) {

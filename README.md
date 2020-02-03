@@ -75,7 +75,7 @@ number_token number (scan_view& s)
 
     while (is_digit(*s))    match += *s++;
 
-    if (*s != '.' || !is_digit(s[1]))    return {TokenType::INTEGER, std::stoi(match)};
+    if (s[0] != '.' || !is_digit(s[1]))    return {TokenType::INTEGER, std::stoi(match)};
 
     // Decimal
     match += *s++ + *s++;
@@ -107,7 +107,7 @@ number_token number2 (scan_view& s)
     if (!advance_if(s, is_digit))    return none_token;
     advance_while(s, is_digit);
 
-    if (s != '.' || !is_digit(s[1]))    return {TokenType::INTEGER, std::stoi(s.copy_skipped())};
+    if (s[0] != '.' || !is_digit(s[1]))    return {TokenType::INTEGER, std::stoi(s.copy_skipped())};
 
     // Decimal
     s += 2;

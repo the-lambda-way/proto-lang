@@ -7,6 +7,7 @@
 // Developed with reference to https://en.cppreference.com/w/cpp/concepts
 // and with Niebler's rangesv3
 
+#include <functional>     // std::invoke
 #include <type_traits>
 #include <iterator>       // std::iterator_traits
 #include <utility>        // std::forward
@@ -321,6 +322,13 @@ concept bool random_access_iterator =
         {  i[n]  } -> convertible_to<iter_reference_t<I>>;
     };
 
+
+template <typename F, typename... Args >
+concept bool invocable =
+    requires(F&& f, Args&&... args)
+    {
+        std::invoke(std::forward<F>(f), std::forward<Args>(args)...);
+    };
 
 
 #endif // CONCEPTS_KLUDGE_H

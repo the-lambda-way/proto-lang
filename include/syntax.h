@@ -75,7 +75,7 @@ struct source_position
 
 
 /**
- * Retrieve the contents of a file into a string.
+ * Retrieve the contents of a file into a string, for *span* characters starting at *start*, up to the end of the file.
  *
  * Based on http://insanecoding.blogspot.com/2011/11/how-to-read-in-file-in-c.html
  *

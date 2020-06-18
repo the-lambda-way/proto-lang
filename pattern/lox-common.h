@@ -139,10 +139,10 @@ void pad_right (std::string& s, int amount)
     s.append(amount, ' ');
 }
 
-std::string to_string (const std::monostate& s)     { return "";                     }
-std::string to_string (const std::string& s)        { return s;                      }
-std::string to_string (std::string_view s)          { return {s.data(), s.length()}; }
-std::string to_string (double d)                    { return std::to_string(d);      }
+std::string to_string (const std::monostate& s)    { return "";                     }
+std::string to_string (const std::string& s)       { return s;                      }
+std::string to_string (std::string_view s)         { return {s.data(), s.length()}; }
+std::string to_string (double d)                   { return std::to_string(d);      }
 std::string to_string (const source_location s)
 {
     return "[" + std::to_string(s.line) + ", " + std::to_string(s.column) + "]";

@@ -20,14 +20,14 @@ namespace PatLib {
  * MAKE_SCANNER is a function-object-generator macro which can be used to bind arguments to an object that is later
  * called to scan a string of characters.
  *
- * @param     params   Parameters to bind to the object upon instantiation.
+ * @param     params   Parameters to bind to the object upon instantiation
  * @param     r        Mutable range representing a string
  * @param     first    Iterator to the start of a string
  * @param     last     Sentinel to the end of the string
  * @returns   Whether the scan was successful
  */
 #define MAKE_SCANNER(class_name, function_name)                                                  \
-    template <typename... Parameters>                                                               \
+    template <typename... Parameters>                                                            \
     class class_name                                                                             \
     {                                                                                            \
     public:                                                                                      \
@@ -45,7 +45,7 @@ namespace PatLib {
         }                                                                                        \
                                                                                                  \
     private:                                                                                     \
-        std::tuple<Parameters...> parameters;                                                    \
+        const std::tuple<Parameters...> parameters;                                              \
                                                                                                  \
         template <typename Tuple, std::size_t... I>                                              \
         bool range_impl (mutable_range& r, Tuple&& t, std::index_sequence<I...>)                 \

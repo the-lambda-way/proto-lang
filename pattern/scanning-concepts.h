@@ -1,5 +1,5 @@
 /**
- * Mike Castillo
+ * Scanning Concepts
  *
  * Copyright (c) 2020 Mike Castillo. All rights reserved.
  * Licensed under the MIT License. See the LICENSE file for full license information.

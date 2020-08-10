@@ -1,11 +1,10 @@
 /**
- * Function Combinators
- *
  * Copyright (c) 2019 Mike Castillo. All rights reserved.
  * Licensed under the MIT License. See the LICENSE file for full license information.
  *
- * Facilities for declaratively composing functions.
+ * Function Combinators
  *
+ * Facilities for declaratively composing functions.
  */
 
 // Compare to https://github.com/rollbear/lift
@@ -30,134 +29,9 @@ namespace Pattern {
 namespace fn {
 
 // =====================================================================================================================
-// Algorithms
-// =====================================================================================================================
-auto identity =
-[]
-<class... Args, boolean_invocable<Args...> F>
-(F&& f, Args&&... args) -> bool
-{
-     return std::invoke(std::forward<F>(f), std::forward<Args>(args)...);
-};
-
-
-auto negate =
-[]
-<class... Args, boolean_invocable<Args...> F>
-(F&& f, Args&&... args) -> bool
-{
-     return !std::invoke(std::forward<F>(f), std::forward<Args>(args)...);
-};
-
-
-auto optional =
-[]
-<class... Args, boolean_invocable<Args...> F>
-(F&& f, Args&&... args) -> bool
-{
-     std::invoke(std::forward<F>(f), std::forward<Args>(args)...);
-     return true;
-};
-
-
-auto at_most =
-[]
-<class... Args, boolean_invocable<Args...> F>
-(size_t n, F&& f, Args&&... args) -> bool
-{
-     ++n;
-     while (--n && std::invoke(f, args...));
-     return true;
-};
-
-
-auto n_times =
-[]
-<class... Args, boolean_invocable<Args...> F>
-(size_t n, F&& f, Args&&... args) -> bool
-{
-     ++n;
-     while (--n)
-         if (!std::invoke(f, args...))    return false;
-     return true;
-};
-
-
-auto repeat =
-[]
-<class... Args, boolean_invocable<Args...> F>
-(size_t min, size_t max, F&& f, Args&&... args) -> bool
-{
-     if (max < min)    return false;
-
-     return n_times(min, f, args...) && at_most(max - min, f, args...);
-};
-
-
-auto many =
-[]
-<class... Args, boolean_invocable<Args...> F>
-(F&& f, Args&&... args) -> bool
-{
-     while (std::invoke(f, args...));
-     return true;
-};
-
-
-auto at_least =
-[]
-<class... Args, boolean_invocable<Args...> F>
-(size_t n, F&& f, Args&&... args) -> bool
-{
-     return n_times(n, f, args...) && many(f, args...);
-};
-
-
-auto some =
-[]
-<class... Args, boolean_invocable<Args...> F>
-(F&& f, Args&&... args) -> bool
-{
-     return at_least(1, std::forward<F>(f), std::forward<Args>(args)...);
-};
-
-
-struct any_t
-{
-     bool operator () (boolean_invocable auto&&... f)
-     {
-          return (... || std::invoke(std::forward<decltype(f)>(f)));
-     }
-
-     template <class... Args, boolean_invocable<Args...>... F>
-     bool operator () (F&&... f, std::tuple<Args...>&& args)
-     {
-          return (... || std::apply(std::forward<decltype(f)>(f), args));
-     };
-}
-any;
-
-
-struct all_t
-{
-     bool operator () (boolean_invocable auto&&... f)
-     {
-          return (... && std::invoke(std::forward<decltype(f)>(f)));
-     }
-
-     template <class... Args, boolean_invocable<Args...>... F>
-     bool operator () (F&&... f, std::tuple<Args...>&& args)
-     {
-          return (... && std::apply(std::forward<decltype(f)>(f), args));
-     };
-}
-all;
-
-
-// =====================================================================================================================
 // Utilities
 // =====================================================================================================================
-// Modifcation of std::bind_front
+// Modification of std::bind_front
 template <typename F, typename... BoundArgs>
 struct bind_back_t
 {
@@ -239,16 +113,138 @@ using _bind_back_t = fn::bind_back_t<std::decay_t<F>, std::decay_t<Args>...>;
 namespace fn {
 
 template <typename F, typename... Args>
-constexpr _bind_back_t<F, Args...>
-bind_back (F&& f, Args&&... args)
+constexpr _bind_back_t<F, Args...> bind_back (F&& f, Args&&... args)
     noexcept(std::is_nothrow_constructible_v<int, _bind_back_t<F, Args...>, F, Args...>)
 {
     return _bind_back_t<F, Args...>(0, std::forward<F>(f), std::forward<Args>(args)...);
 }
 
 
-} // namespace fn
+// =====================================================================================================================
+// Algorithms
+// =====================================================================================================================
+auto identity =
+[]
+<class... Args, boolean_invocable<Args...> F>
+(F&& f, Args&&... args) -> bool
+{
+     return std::invoke(std::forward<F>(f), std::forward<Args>(args)...);
+};
 
+
+auto negate =
+[]
+<class... Args, boolean_invocable<Args...> F>
+(F&& f, Args&&... args) -> bool
+{
+     return !std::invoke(std::forward<F>(f), std::forward<Args>(args)...);
+};
+
+
+auto optional =
+[]
+<class... Args, boolean_invocable<Args...> F>
+(F&& f, Args&&... args) -> bool
+{
+     std::invoke(std::forward<F>(f), std::forward<Args>(args)...);
+     return true;
+};
+
+
+auto at_most =
+[]
+<class... Args, boolean_invocable<Args...> F>
+(std::size_t n, F&& f, Args&&... args) -> bool
+{
+     ++n;
+     while (--n && std::invoke(f, args...));
+     return true;
+};
+
+
+auto n_times =
+[]
+<class... Args, boolean_invocable<Args...> F>
+(std::size_t n, F&& f, Args&&... args) -> bool
+{
+     ++n;
+     while (--n)
+         if (!std::invoke(f, args...))    return false;
+     return true;
+};
+
+
+auto repeat =
+[]
+<class... Args, boolean_invocable<Args...> F>
+(std::size_t min, std::size_t max, F&& f, Args&&... args) -> bool
+{
+     if (max < min)    return false;
+
+     return n_times(min, f, args...) && at_most(max - min, f, args...);
+};
+
+
+auto many =
+[]
+<class... Args, boolean_invocable<Args...> F>
+(F&& f, Args&&... args) -> bool
+{
+     while (std::invoke(f, args...));
+     return true;
+};
+
+
+
+auto at_least =
+[]
+<class... Args, boolean_invocable<Args...> F>
+(size_t n, F&& f, Args&&... args) -> bool
+{
+     return n_times(n, f, args...) && many(f, args...);
+};
+
+
+auto some =
+[]
+<class... Args, boolean_invocable<Args...> F>
+(F&& f, Args&&... args) -> bool
+{
+     return at_least(1, std::forward<F>(f), std::forward<Args>(args)...);
+};
+
+
+struct // any
+{
+     bool operator () (boolean_invocable auto&&... f)
+     {
+          return (... || std::invoke(std::forward<decltype(f)>(f)));
+     }
+
+     template <class... Args, boolean_invocable<Args...>... F>
+     bool operator () (F&&... f, std::tuple<Args...>&& args)
+     {
+          return (... || std::apply(std::forward<decltype(f)>(f), args));
+     };
+} any;
+
+
+struct // all
+{
+     bool operator () (boolean_invocable auto&&... f)
+     {
+          return (... && std::invoke(std::forward<decltype(f)>(f)));
+     }
+
+     template <class... Args, boolean_invocable<Args...>... F>
+     bool operator () (F&&... f, std::tuple<Args...>&& args)
+     {
+          return (... && std::apply(std::forward<decltype(f)>(f), args));
+     };
+} all;
+
+
+} // namespace fn
 
 namespace fo {
 
@@ -260,13 +256,13 @@ auto negate   = [] (auto&& f)                { return std::bind_front(fn::negate
 auto optional = [] (auto&& f)                { return std::bind_front(fn::optional,   std::forward<decltype(f)>(f)); };
 auto at_most  = [] (std::size_t n, auto&& f) { return std::bind_front(fn::at_most, n, std::forward<decltype(f)>(f)); };
 auto n_times  = [] (std::size_t n, auto&& f) { return std::bind_front(fn::n_times, n, std::forward<decltype(f)>(f)); };
-auto many     = [] (auto&& f)                { return std::bind_front(fn::many,       std::forward<decltype(f)>(f)); };
 
-auto repeat = [] (size_t min, size_t max, auto&& f)
+auto repeat = [] (std::size_t min, std::size_t max, auto&& f)
 {
      return std::bind_front(fn::repeat, min, max, std::forward<decltype(f)>(f));
 };
 
+auto many     = [] (auto&& f)                { return std::bind_front(fn::many,        std::forward<decltype(f)>(f)); };
 auto at_least = [] (std::size_t n, auto&& f) { return std::bind_front(fn::at_least, n, std::forward<decltype(f)>(f)); };
 auto some     = [] (auto&& f)                { return std::bind_front(fn::some,        std::forward<decltype(f)>(f)); };
 

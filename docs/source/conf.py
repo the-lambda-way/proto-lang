@@ -19,11 +19,6 @@ import sphinx_rtd_theme
 # sys.path.insert(0, os.path.abspath('.'))
 
 
-# -- Run Doxygen -------------------------------------------------------------
-# import subprocess
-# subprocess.call('doxygen Doxyfile', shell=True)
-
-
 # -- Project information -----------------------------------------------------
 
 project = 'Pattern Library'
@@ -48,7 +43,6 @@ release = '0.1.0'
 extensions = [
     'sphinx.ext.coverage',
     'sphinx.ext.githubpages',
-    # 'breathe',
     'sphinx_rtd_theme'
 ]
 
@@ -80,6 +74,7 @@ exclude_patterns = []
 pygments_style = None
 
 primary_domain = "cpp"
+highlight_language = "cpp"
 
 
 # -- Options for HTML output -------------------------------------------------
@@ -187,5 +182,4 @@ epub_exclude_files = ['search.html']
 
 
 # -- Extension configuration -------------------------------------------------
-# breathe_projects = { "PatternLibrary": "./xml" }
-# breathe_default_project = "PatternLibrary"
+

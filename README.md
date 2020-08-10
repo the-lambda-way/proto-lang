@@ -179,6 +179,11 @@ myLang.add_rule(PatDef::decimal, [](auto m) -> number_token { return {TokenType:
 ```
 
 
+# Documentation
+
+[Read the docs.](https://the-proto-language.readthedocs.io/en/cpp20/)
+
+
 
 # Current Progress
 

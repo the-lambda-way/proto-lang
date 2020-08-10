@@ -114,9 +114,9 @@ auto number4 = Tokenize::incremental({integer,    tokenize_int},
 namespace Grammar
 {
 
-auto digit   = GrammarExp << '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9';
+auto digit   = GrammarExp >> '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9';
 auto integer = +digit;
-auto decimal = integer << '.' << integer;
+auto decimal = integer + '.' + integer;
 
 number_token tokenize_int (std::string_view match)
 {

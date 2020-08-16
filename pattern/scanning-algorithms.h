@@ -1,8 +1,8 @@
-/**
- * Scanning Algorithms
- *
+/*
  * Copyright (c) 2019 Mike Castillo. All rights reserved.
  * Licensed under the MIT License. See the LICENSE file for full license information.
+ *
+ * Scanning Algorithms
  *
  * Algorithms for scanning sequences of elements.
  *
@@ -13,9 +13,9 @@
 #include <algorithm>       // std::ranges::mismatch
 #include <concepts>
 #include <iterator>
-#include <functional>      // std::identity
 #include <ranges>
-#include <type_traits>     // std::is_reference_v, std::remove_reference_t
+#include <type_traits>     // std::is_reference_v
+#include <utility>         // std::declval
 
 #include "scanning-concepts.h"
 
@@ -26,41 +26,35 @@ namespace Pattern {
 // =====================================================================================================================
 // Concepts
 // =====================================================================================================================
-template <class F, class I, class S>
-concept scanning_algorithm = std::forward_iterator<I> && std::sentinel_for<S, I> && boolean_invocable<F, I&, S>;
-
-
 template <class R>
-concept mutable_forward_range = std::ranges::forward_range<R> && std::is_reference_v<std::ranges::iterator_t<R>>;
+concept mutable_forward_range =
+     std::ranges::forward_range<R> &&
+     std::is_reference_v<decltype(begin(std::declval<R>()))>;
 
 
 // =====================================================================================================================
 // Scanning Functions
 // =====================================================================================================================
-
-// TODO: warn about the gotcha of passing a string literal for comparison, which is deduced as a character array and considered a valid range. It will usually fail, because character arrays have a null terminal, which is treated as an element of the range. Can use string literals to work around this issue.
-
-// A character scanning application or library can create an overload for character arrays which special cases this (this would require a redesign of the interface, make scan a function that returns a function object).
-
-
 struct scan_t
 {
      template <std::forward_iterator I, std::sentinel_for<I> S, class E>
-          requires (!std::ranges::range<E>) &&    // reject potential equality overload between a range and an element
+          requires (!std::ranges::range<E>) &&     // reject potential equality overload between a range and an element
                    std::equality_comparable_with<E, std::iter_value_t<I>>
      bool operator() (I& first, S last, E element)
      {
-          if (first == last || *first != element)    return false;
+          if (first == last || *first != element)     return false;
           ++first;
           return true;
      }
 
 
-     template <mutable_forward_range R,
-               std::equality_comparable_with<std::ranges::range_value_t<R>> E>
+     template <mutable_forward_range R, class E>
+          requires (!std::ranges::range<E>) &&     // reject potential equality overload between a range and an element
+                   std::equality_comparable_with<E, std::ranges::range_value_t<R>>
      bool operator() (R&& r, E element)
      {
-          return operator()(std::ranges::begin(r), std::ranges::end(r), std::move(element));
+          using std::begin;
+          return operator()(begin(r), std::ranges::end(r), std::move(element));
      }
 
 
@@ -71,7 +65,7 @@ struct scan_t
      {
           if constexpr (std::sized_sentinel_for<S1, I1> && std::sized_sentinel_for<S2, I2>)
           {
-               if (std::ranges::distance(first1, last1) < std::ranges::distance(first2, last2))    return false;
+               if (std::ranges::distance(first1, last1) < std::ranges::distance(first2, last2))     return false;
           }
 
           auto ptrs = std::ranges::mismatch(first1, last1, first2, last2);
@@ -87,7 +81,8 @@ struct scan_t
           requires indirectly_equality_comparable<std::ranges::iterator_t<R>, I>
      bool operator() (R&& r, I first, S last)
      {
-          return operator()(std::ranges::begin(r), std::ranges::end(r),
+          using std::begin;
+          return operator()(begin(r), std::ranges::end(r),
                             std::move(first), std::move(last));
      }
 
@@ -105,10 +100,33 @@ struct scan_t
           requires range_equality_comparable<R1, R2>
      bool operator() (R1&& r1, R2&& r2)
      {
-          return operator()(std::ranges::begin(r1), std::ranges::end(r1),
+          using std::begin;
+          return operator()(begin(r1), std::ranges::end(r1),
                             std::ranges::begin(r2), std::ranges::end(r2));
      }
-} // struct scan_t
+
+
+     // --------------------------------------------------
+     // Character literal specialization
+     // --------------------------------------------------
+     template <class CharT, std::forward_iterator I, std::sentinel_for<I> S>
+          requires std::equality_comparable_with<CharT, std::iter_value_t<I>>
+     bool operator() (I& first, S last, const CharT* comparison)
+     {
+          return operator()(first, std::move(last), std::string_view {comparison});
+     }
+
+
+     template <class CharT, mutable_forward_range R>
+          requires std::equality_comparable_with<CharT, std::ranges::range_value_t<R>>
+     bool operator() (R&& r, const CharT* comparison)
+     {
+          using std::begin;
+          return operator()(begin(r), std::ranges::end(r),
+                            std::string_view {comparison});
+     }
+
+ } // struct scan_t
 scan;
 
 
@@ -118,39 +136,44 @@ struct scan_if_t
                std::indirect_unary_predicate<I> P>
      bool operator() (I& first, S last, P pred)
      {
-          if (first == last || !std::invoke(pred, *first))    return false;
+          if (first == last || !std::invoke(pred, *first))     return false;
           ++first;
           return true;
      }
 
 
      template <mutable_forward_range R,
-               std::indirect_unary_predicate<std::ranges::range_value_t<R>> P>
+               std::indirect_unary_predicate<std::ranges::iterator_t<R>> P>
      bool operator() (R&& r, P pred)
      {
-          return operator()(std::ranges::begin(r), std::ranges::end(r), std::move(pred));
+          using std::begin;
+          return operator()(begin(r), std::ranges::end(r), std::move(pred));
      }
+
 } // struct scan_if_t
 scan_if;
 
 
 struct scan_not_t
 {
-     template <std::forward_iterator I, std::sentinel_for<I> S,
-               std::equality_comparable_with<std::iter_value_t<I>> E>
+     template <std::forward_iterator I, std::sentinel_for<I> S, class E>
+          requires (!std::ranges::range<E>) &&     // reject potential equality overload between a range and an element
+                   std::equality_comparable_with<E, std::iter_value_t<I>>
      bool operator() (I& first, S last, E element)
      {
-          if (first == last || *first == element)    return false;
+          if (first == last || *first == element)     return false;
           ++first;
           return true;
      }
 
 
-     template <mutable_forward_range R,
-               std::equality_comparable_with<std::ranges::iterator_t<R>> E>
+     template <mutable_forward_range R, class E>
+          requires (!std::ranges::range<E>) &&     // reject potential equality overload between a range and an element
+                   std::equality_comparable_with<E, std::ranges::range_value_t<R>>
      bool operator() (R&& r, E element)
      {
-          return scan_if_not(std::ranges::begin(r), std::ranges::end(r), std::move(element));
+          using std::begin;
+          return operator()(begin(r), std::ranges::end(r), std::move(element));
      }
 
 
@@ -170,7 +193,7 @@ struct scan_not_t
 
           auto ptrs = std::ranges::mismatch(first1, last1, first2, last2);
 
-          if (ptrs.in2 == last2)    return false;
+          if (ptrs.in2 == last2)     return false;
 
           ++first1;
           return true;
@@ -181,7 +204,8 @@ struct scan_not_t
           requires indirectly_equality_comparable<std::ranges::iterator_t<R>, I>
      bool operator() (R&& r, I first, S last)
      {
-          return operator()(std::ranges::begin(r), std::ranges::end(r),
+          using std::begin;
+          return operator()(begin(r), std::ranges::end(r),
                             std::move(first), std::move(last));
      }
 
@@ -199,9 +223,32 @@ struct scan_not_t
           requires range_equality_comparable<R1, R2>
      bool operator() (R1&& r1, R2&& r2)
      {
-          return operator()(std::ranges::begin(r1), std::ranges::end(r1),
+          using std::begin;
+          return operator()(begin(r1), std::ranges::end(r1),
                             std::ranges::begin(r2), std::ranges::end(r2));
      }
+
+
+     // --------------------------------------------------
+     // Character literal specialization
+     // --------------------------------------------------
+     template <class CharT, std::forward_iterator I, std::sentinel_for<I> S>
+          requires std::equality_comparable_with<CharT, std::iter_value_t<I>>
+     bool operator() (I& first, S last, const CharT* comparison)
+     {
+          return operator()(first, std::move(last), std::string_view {comparison});
+     }
+
+
+     template <class CharT, mutable_forward_range R>
+          requires std::equality_comparable_with<CharT, std::ranges::range_value_t<R>>
+     bool operator() (R&& r, const CharT* comparison)
+     {
+          using std::begin;
+          return operator()(begin(r), std::ranges::end(r),
+                            std::string_view {comparison});
+     }
+
 } // struct scan_not_t
 scan_not;
 
@@ -212,38 +259,46 @@ struct scan_if_not_t
                std::indirect_unary_predicate<I> P>
      bool operator() (I& first, S last, P pred)
      {
-          if (first == last || std::invoke(pred, *first))    return false;
+          if (first == last || std::invoke(pred, *first))     return false;
           ++first;
           return true;
      }
 
 
      template <mutable_forward_range R,
-               std::indirect_unary_predicate<std::ranges::range_value_t<R>> P>
+               std::indirect_unary_predicate<std::ranges::iterator_t<R>> P>
      bool operator() (R&& r, P pred)
      {
-          return operator()(std::ranges::begin(r), std::ranges::end(r), std::move(pred));
+          using std::begin;
+          return operator()(begin(r), std::ranges::end(r), std::move(pred));
      }
 
 
      template <std::forward_iterator I, std::sentinel_for<I> S,
-               scanning_algorithm<I, S> F>
+               boolean_invocable<I, S> F>
      bool operator() (I& first, S last, F f)
      {
           I copy = first;
-          if (std::invoke(f, copy, last))    return false;
+          if (std::invoke(f, copy, last))     return false;
 
           ++first;
           return true;
      }
 
 
-     template <mutable_forward_range R,
-               scanning_algorithm<std::ranges::iterator_t<R>, std::ranges::sentinel_t<R>> F>
+     template <mutable_forward_range R, boolean_invocable<R> F>
      bool operator() (R&& r, F f)
      {
-          return operator()(std::ranges::begin(r), std::ranges::end(r), std::move(f));
+          auto copy = r;
+          if (std::invoke(f, copy))     return false;
+
+          using std::begin;
+          auto& first = begin(r);
+
+          ++first;
+          return true;
      }
+
 } // struct scan_if_not_t
 scan_if_not;
 

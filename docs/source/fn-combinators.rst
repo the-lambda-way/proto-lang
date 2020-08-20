@@ -5,7 +5,7 @@ Facilities for declaratively composing functions.
 
 Base algorithms are found in the namespace ``fn``.
 
-Each algorithm in ``fn`` has a counterpart in the namespace ``fo`` which binds the child function, and any parameters of the algorithm, to a function object which defines the function call operator to forwards its arguments to the bound function. These objects are known colloquially as combinators.
+Each algorithm in ``fn`` has a counterpart in the namespace ``fo`` which binds the child function, and any parameters of the algorithm, to a function object which defines the function call operator to forward its called arguments to the bound function. These objects are known colloquially as combinators.
 
 User-defined functions passed to combinators should implement a predicate on its arguments, possibly mutating them. When composing impure functions, care must be taken by the user to properly manage state when an algorithm fails midway.
 
@@ -70,13 +70,12 @@ Examples
      #include "scanning-algorithms.h"
      #include "fn-combinators.h"
      using namespace Pattern;
-     using namespace std::literals::string_view_literals;
 
-     int main
+     int main ()
      {
-          scan_view s = "Typing is no substitute for thinking. -- Richard W. Hamming"
+          scan_view s = "Typing is no substitute for thinking. -- Richard W. Hamming";
 
-          auto scan_first_word = fn::bind_back(scan, "Typing "sv);
+          auto scan_first_word = fn::bind_back(scan, "Typing ");
           scan_first_word(s);
 
           std::cout << "Next letter: " << *s << '\n';
@@ -148,11 +147,13 @@ Examples
           scan_view s1 = "Hello, World!";
           scan_view s2 = s1;
 
-          bool r1 = fn::identity(scan, s1, "Hello, "sv);
+          std::cout << std::boolalpha;
+
+          bool r1 = fn::identity(scan, s1, "Hello, ");
           std::cout << "s1: " << *s1 << '\n';
           std::cout << "r1: " << r1 << '\n';
 
-          auto f = fo::identity(fn::bind_back(scan, "Hello, "sv));
+          auto f = fo::identity(fn::bind_back(scan, "Hello, "));
           bool r2 = f(s2);
           std::cout << "s2: " << *s2 << '\n';
           std::cout << "r2: " << r2 << '\n';
@@ -232,11 +233,13 @@ Examples
           scan_view s1 = "Hello, World!";
           scan_view s2 = s1;
 
-          auto r1 = fn::negate(scan, s1, "Hello, "sv);
+          std::cout << std::boolalpha;
+
+          auto r1 = fn::negate(scan, s1, "Hello, ");
           std::cout << "s1: " << *s1 << '\n';
           std::cout << "r1: " << r1 << '\n';
 
-          auto f = fo::negate(fn::bind_back(scan, "Hello, "sv));
+          auto f = fo::negate(fn::bind_back(scan, "Hello, "));
           auto r2 = f(s2);
           std::cout << "s2: " << *s2 << '\n';
           std::cout << "r2: " << r2 << '\n';
@@ -309,6 +312,8 @@ Examples
      {
           scan_view s1 = "Hello, World!";
           scan_view s2 = s1;
+
+          std::cout << std::boolalpha;
 
           bool r1 = fn::optional(scan, s1, 'z');
           std::cout << "s1: " << *s1 << '\n';
@@ -389,14 +394,16 @@ Examples
           scan_view s1 {source};
           scan_view s2 {source};
 
-          bool r1 = fn::at_most(3, scan, s1, "Hello? "sv);
-          std::cout << "s1 count: " << (s1 - source.begin()) / 7 << '\n';
-          std::cout << "r1: " << r1 << '\n';
+          std::cout << std::boolalpha;
 
-          auto f = fo::at_most(3, fn::bind_back(scan, "Hello? "sv));
+          bool r1 = fn::at_most(3, scan, s1, "Hello? ");
+          std::cout << "s1 count: " << (s1 - source.begin()) / 7 << '\n';
+          std::cout << "r1:       " << r1 << '\n';
+
+          auto f = fo::at_most(3, fn::bind_back(scan, "Hello? "));
           bool r2 = f(s2);
           std::cout << "s2 count: " << (s2 - source.begin()) / 7 << '\n';
-          std::cout << "r2: " << r2 << '\n';
+          std::cout << "r2:       " << r2 << '\n';
      }
 
 Output
@@ -404,9 +411,9 @@ Output
 .. code-block:: text
 
      s1 count: 3
-     r1: true
+     r1:       true
      s2 count: 3
-     r2: true
+     r2:       true
 
 
 ========================================================================================================================
@@ -468,14 +475,16 @@ Examples
           scan_view s1 {source};
           scan_view s2 {source};
 
-          bool r1 = fn::n_times(3, scan, s1, "Hello? "sv);
-          std::cout << "s1 count: " << (s1 - source.begin()) / 7 << '\n';
-          std::cout << "r1: " << r1 << '\n';
+          std::cout << std::boolalpha;
 
-          auto f = fo::n_times(3, fn::bind_back(scan, "Hello? "sv));
+          bool r1 = fn::n_times(3, scan, s1, "Hello? ");
+          std::cout << "s1 count: " << (s1 - source.begin()) / 7 << '\n';
+          std::cout << "r1:       " << r1 << '\n';
+
+          auto f = fo::n_times(3, fn::bind_back(scan, "Hello? "));
           bool r2 = f(s2);
           std::cout << "s2 count: " << (s2 - source.begin()) / 7 << '\n';
-          std::cout << "r2: " << r2 << '\n';
+          std::cout << "r2:       " << r2 << '\n';
      }
 
 Output
@@ -483,9 +492,9 @@ Output
 .. code-block:: text
 
      s1 count: 3
-     r1: true
+     r1:       true
      s2 count: 3
-     r2: true
+     r2:       true
 
 
 ========================================================================================================================
@@ -547,14 +556,16 @@ Examples
           scan_view s1 {source};
           scan_view s2 {source};
 
-          bool r1 = fn::repeat(3, 4, scan, s1, "Hello? "sv);
-          std::cout << "s1 count: " << (s1 - source.begin()) / 7 << '\n';
-          std::cout << "r1: " << r1 << '\n';
+          std::cout << std::boolalpha;
 
-          auto f = fo::repeat(3, 4, fn::bind_back(scan, "Hello? "sv));
+          bool r1 = fn::repeat(3, 4, scan, s1, "Hello? ");
+          std::cout << "s1 count: " << (s1 - source.begin()) / 7 << '\n';
+          std::cout << "r1:       " << r1 << '\n';
+
+          auto f = fo::repeat(3, 4, fn::bind_back(scan, "Hello? "));
           bool r2 = f(s2);
           std::cout << "s2 count: " << (s2 - source.begin()) / 7 << '\n';
-          std::cout << "r2: " << r2 << '\n';
+          std::cout << "r2:       " << r2 << '\n';
      }
 
 Output
@@ -562,9 +573,9 @@ Output
 .. code-block:: text
 
      s1 count: 4
-     r1: true
+     r1:       true
      s2 count: 4
-     r2: true
+     r2:       true
 
 
 ========================================================================================================================
@@ -631,14 +642,16 @@ Examples
           scan_view s1 {source};
           scan_view s2 {source};
 
-          bool r1 = fn::many(scan, s1, "Hello? "sv);
-          std::cout << "s1 count: " << (s1 - source.begin()) / 7 << '\n';
-          std::cout << "r1: " << r1 << '\n';
+          std::cout << std::boolalpha;
 
-          auto f = fo::many(fn::bind_back(scan, "Hello? "sv));
+          bool r1 = fn::many(scan, s1, "Hello? ");
+          std::cout << "s1 count: " << (s1 - source.begin()) / 7 << '\n';
+          std::cout << "r1:       " << r1 << '\n';
+
+          auto f = fo::many(fn::bind_back(scan, "Hello? "));
           bool r2 = f(s2);
           std::cout << "s2 count: " << (s2 - source.begin()) / 7 << '\n';
-          std::cout << "r2: " << r2 << '\n';
+          std::cout << "r2:       " << r2 << '\n';
      }
 
 Output
@@ -646,9 +659,9 @@ Output
 .. code-block:: text
 
      s1 count: 5
-     r1: true
+     r1:       true
      s2 count: 5
-     r2: true
+     r2:       true
 
 
 ========================================================================================================================
@@ -715,14 +728,16 @@ Examples
           scan_view s1 {source};
           scan_view s2 {source};
 
-          bool r1 = fn::least(3, scan, s1, "Hello? "sv);
-          std::cout << "s1 count: " << (s1 - source.begin()) / 7 << '\n';
-          std::cout << "r1: " << r1 << '\n';
+          std::cout << std::boolalpha;
 
-          auto f = fo::least(3, fn::bind_back(scan, "Hello? "sv));
+          bool r1 = fn::at_least(3, scan, s1, "Hello? ");
+          std::cout << "s1 count: " << (s1 - source.begin()) / 7 << '\n';
+          std::cout << "r1:       " << r1 << '\n';
+
+          auto f = fo::at_least(3, fn::bind_back(scan, "Hello? "));
           bool r2 = f(s2);
           std::cout << "s2 count: " << (s2 - source.begin()) / 7 << '\n';
-          std::cout << "r2: " << r2 << '\n';
+          std::cout << "r2:       " << r2 << '\n';
      }
 
 Output
@@ -730,9 +745,9 @@ Output
 .. code-block:: text
 
      s1 count: 5
-     r1: true
+     r1:       true
      s2 count: 5
-     r2: true
+     r2:       true
 
 
 ========================================================================================================================
@@ -799,14 +814,16 @@ Examples
           scan_view s1 {source};
           scan_view s2 {source};
 
-          bool r1 = fn::some(scan, s1, "Hello? "sv);
-          std::cout << "s1 count: " << (s1 - source.begin()) / 7 << '\n';
-          std::cout << "r1: " << r1 << '\n';
+          std::cout << std::boolalpha;
 
-          auto f = fo::some(fn::bind_back(scan, "Hello? "sv));
+          bool r1 = fn::some(scan, s1, "Hello? ");
+          std::cout << "s1 count: " << (s1 - source.begin()) / 7 << '\n';
+          std::cout << "r1:       " << r1 << '\n';
+
+          auto f = fo::some(fn::bind_back(scan, "Hello? "));
           bool r2 = f(s2);
           std::cout << "s2 count: " << (s2 - source.begin()) / 7 << '\n';
-          std::cout << "r2: " << r2 << '\n';
+          std::cout << "r2:       " << r2 << '\n';
      }
 
 Output
@@ -814,9 +831,9 @@ Output
 .. code-block:: text
 
      s1 count: 5
-     r1: true
+     r1:       true
      s2 count: 5
-     r2: true
+     r2:       true
 
 
 ========================================================================================================================
@@ -834,7 +851,7 @@ Invokes a set of functions until one returns true. Returns false if none succeed
 2) .. code-block::
 
      template <class... Args, boolean_invocable<Args...>... F>
-     bool fn::any (F&&... f, std::tuple<Args...>&& args)
+     bool fn::any (std::tuple<Args...>&& args, F&&... f)
 
 Invokes a set of functions until one returns true, passing each function the elements of ``args``. Returns false if none succeed.
 
@@ -842,7 +859,7 @@ Invokes a set of functions until one returns true, passing each function the ele
 
      /*unspecified*/ fo::any (auto&&... f)
 
-Binds ``f...`` to a function object. When invoked with a set of arguments ``args...``, invokes each function until one returns true, passing each function ``args...``. Returns false if none succeed.
+Binds ``f...`` to a function object. When invoked with a set of arguments ``call_args...``, invokes each function until one returns true, passing each function ``call_args...``. Returns false if none succeed.
 
 
 Returns
@@ -882,15 +899,17 @@ Examples
           scan_view s1 {source};
           scan_view s2 {source};
 
-          auto f1 = fn::bind_back(scan, "Hello, "sv);
-          auto f2 = fn::bind_back(scan, "World"sv);
+          auto f1 = fn::bind_back(scan, "Hello, ");
+          auto f2 = fn::bind_back(scan, "World");
 
-          bool r1 = fn::any(f1, f2, {s1});
+          std::cout << std::boolalpha;
+
+          bool r1 = fn::any(std::make_tuple(std::ref(s1)), f1, f2);
           std::cout << "s1: " << *s1 << '\n';
           std::cout << "r1: " << r1 << '\n';
 
           auto g = fo::any(f1, f2);
-          bool r1 = g(s2);
+          bool r2 = g(s2);
           std::cout << "s2: " << *s2 << '\n';
           std::cout << "r2: " << r2 << '\n';
      }
@@ -920,7 +939,7 @@ Invokes a set of functions while they return true. Returns false if any failed.
 2) .. code-block::
 
      template <class... Args, boolean_invocable<Args...>... F>
-     bool fn::all (F&&... f, std::tuple<Args...>&& args)
+     bool fn::all (std::tuple<Args...>&& args, F&&... f)
 
 Invokes a set of functions while they return true, passing each the elements of ``args``. Returns false if any failed.
 
@@ -928,7 +947,7 @@ Invokes a set of functions while they return true, passing each the elements of 
 
      /*unspecified*/ fo::all (auto&&... f)
 
-Binds ``f...`` to a function object. When invoked with a set of arguments ``args...``, invokes each function while they return true, passing each function ``args...``. Returns false if any failed.
+Binds ``f...`` to a function object. When invoked with a set of arguments ``call_args...``, invokes each function while they return true, passing each function ``call_args...``. Returns false if any failed.
 
 
 Returns
@@ -968,15 +987,17 @@ Examples
           scan_view s1 {source};
           scan_view s2 {source};
 
-          auto f1 = fn::bind_back(scan, "Hello, "sv);
-          auto f2 = fn::bind_back(scan, "World"sv);
+          auto f1 = fn::bind_back(scan, "Hello, ");
+          auto f2 = fn::bind_back(scan, "World");
 
-          bool r1 = fn::all(f1, f2, {s1});
+          std::cout << std::boolalpha;
+
+          bool r1 = fn::all(std::make_tuple(std::ref(s1)), f1, f2);
           std::cout << "s1: " << *s1 << '\n';
           std::cout << "r1: " << r1 << '\n';
 
           auto g = fo::all(f1, f2);
-          bool r1 = g(s2);
+          bool r2 = g(s2);
           std::cout << "s2: " << *s2 << '\n';
           std::cout << "r2: " << r2 << '\n';
      }

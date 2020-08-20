@@ -61,4 +61,6 @@ A refinement of ``std::ranges::forward_range`` that provides a reference to its 
 .. code-block::
 
      template <class R>
-     concept mutable_forward_range = std::ranges::forward_range<R> && std::is_reference_v<std::ranges::iterator_t<R>>;
+     concept mutable_forward_range =
+          std::ranges::forward_range<R> &&
+          std::is_reference_v<decltype(begin(std::declval<R>()))>;

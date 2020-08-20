@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright (c) 2019 Mike Castillo. All rights reserved.
  * Licensed under the MIT License. See the LICENSE file for full license information.
  *
@@ -92,7 +92,7 @@ private:
 
      using BoundIndices = std::index_sequence_for<BoundArgs...>;
 
-     template<typename T, size_t... Ind, typename... CallArgs>
+     template <class T, size_t... Ind, class... CallArgs>
      static constexpr decltype(auto)
      S_call (T&& g, std::index_sequence<Ind...>, CallArgs&&... call_args)
      {
@@ -195,7 +195,6 @@ auto many =
 };
 
 
-
 auto at_least =
 []
 <class... Args, boolean_invocable<Args...> F>
@@ -214,22 +213,58 @@ auto some =
 };
 
 
-struct // any
+template <class>      constexpr bool is_tuple                   = false;
+template <class... T> constexpr bool is_tuple<std::tuple<T...>> = true;
+
+struct any_t
 {
      bool operator () (boolean_invocable auto&&... f)
      {
           return (... || std::invoke(std::forward<decltype(f)>(f)));
      }
 
-     template <class... Args, boolean_invocable<Args...>... F>
-     bool operator () (F&&... f, std::tuple<Args...>&& args)
+     template <class... Args>
+     bool operator () (Args&&... args)
      {
-          return (... || std::apply(std::forward<decltype(f)>(f), args));
+          return impl(std::make_index_sequence<sizeof...(Args) - 1>{}, std::forward<Args>(args)...);
      };
+
+
+private:
+     // set I to be one less than the number of arguments, so that the last element is not accessed twice
+     template <size_t... I, class... Args>
+     bool impl (std::index_sequence<I...>, Args&&... args)
+     {
+          auto packed_args = std::make_tuple(std::forward<Args>(args)...);
+          constexpr int last = sizeof...(Args) - 1;
+          using LastType = std::tuple_element_t<last, decltype(packed_args)>;
+
+          if constexpr (is_tuple<LastType>)
+               return deduced_args_impl(
+                    std::forward<decltype(std::get<last>(packed_args))>(std::get<last>(packed_args)),
+                    std::forward<decltype(std::get<I>(packed_args))>(std::get<I>(packed_args))...
+               );
+          else
+               return no_args_impl(std::forward<Args>(args)...);
+     }
+
+     template <class... F, class... Args>
+          requires (... && boolean_invocable<F, Args...>)
+     bool deduced_args_impl (std::tuple<Args...> args, F&&... f)
+     {
+          return (... || std::apply(std::forward<F>(f), args));
+     }
+
+     bool no_args_impl (boolean_invocable auto&&... f)
+     {
+          return (... || std::invoke(std::forward<decltype(f)>(f)));
+     }
+
+
 } any;
 
 
-struct // all
+struct all_t
 {
      bool operator () (boolean_invocable auto&&... f)
      {
@@ -239,10 +274,9 @@ struct // all
      template <class... Args, boolean_invocable<Args...>... F>
      bool operator () (F&&... f, std::tuple<Args...>&& args)
      {
-          return (... && std::apply(std::forward<decltype(f)>(f), args));
+          return (... && std::apply(std::forward<F>(f), args));
      };
 } all;
-
 
 } // namespace fn
 
@@ -257,14 +291,17 @@ auto optional = [] (auto&& f)                { return std::bind_front(fn::option
 auto at_most  = [] (std::size_t n, auto&& f) { return std::bind_front(fn::at_most, n, std::forward<decltype(f)>(f)); };
 auto n_times  = [] (std::size_t n, auto&& f) { return std::bind_front(fn::n_times, n, std::forward<decltype(f)>(f)); };
 
+
 auto repeat = [] (std::size_t min, std::size_t max, auto&& f)
 {
      return std::bind_front(fn::repeat, min, max, std::forward<decltype(f)>(f));
 };
 
+
 auto many     = [] (auto&& f)                { return std::bind_front(fn::many,        std::forward<decltype(f)>(f)); };
 auto at_least = [] (std::size_t n, auto&& f) { return std::bind_front(fn::at_least, n, std::forward<decltype(f)>(f)); };
 auto some     = [] (auto&& f)                { return std::bind_front(fn::some,        std::forward<decltype(f)>(f)); };
+
 
 auto any = [] (auto&&... f)
 {
@@ -290,7 +327,6 @@ auto all = [] (auto&&... f)
                return (... && std::invoke(f, call_args...));
           };
 };
-
 
 } // namespace fo
 } // namespace Pattern

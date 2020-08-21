@@ -12,10 +12,9 @@
  * Facilities for managing source code.
  */
 
-#ifndef SYNTAX
-#define SYNTAX
+#pragma once
 
-#include <fstream>    // file_to_string
+#include <fstream>    // file_to_string, string_to_file
 #include <string>
 
 
@@ -24,20 +23,20 @@
  */
 struct source_position
 {
-    size_t position;
-    size_t span;
+    std::size_t position;
+    std::size_t span;
 
     template <typename CharT>
     constexpr std::basic_string_view<CharT> lexeme (CharT* data)    { return {data + position, span}; }
 
 
-    constexpr source_position (size_t position, size_t span)
+    constexpr source_position (std::size_t position, std::size_t span)
         : position {position}, span {span}
     {}
 
 
     template <typename CharT>
-    constexpr source_position (CharT* data, CharT* start, size_t span)
+    constexpr source_position (CharT* data, CharT* start, std::size_t span)
         : position {start - data}, span {span}
     {}
 
@@ -55,7 +54,7 @@ struct source_position
 
 
     template <typename CharT>
-    constexpr source_position (std::basic_string_view<CharT> source, CharT* start, size_t span)
+    constexpr source_position (std::basic_string_view<CharT> source, CharT* start, std::size_t span)
         : position {start - source.begin()}, span {span}
     {}
 
@@ -84,19 +83,17 @@ struct source_position
  * @param    span    Number of characters to retrieve
  * @return   Contents retrieved from file
  */
-std::string file_to_string (const std::string& path, size_t start = 0, size_t span = -1)
+std::string file_to_string (const std::string& path, std::size_t start = 0, std::size_t span = -1)
 {
-    using namespace std;
-
     // Open file
-    ifstream file (path, ios::in | ios::binary | ios::ate);
+    std::ifstream file {path, std::ios::in | std::ios::binary | std::ios::ate};
     if (!file)   throw (errno);
 
     // Allocate string memory
-    std::string contents;
+    span = std::min(span, (std::std::size_t) file.tellg() - start);
 
-    span = std::min(span, (size_t) file.tellg() - start);
-    contents.resize(span);
+    std::string contents;
+    contents.resize((std::string::std::size_type) span);
 
     // Read file contents into string
     file.seekg(start);
@@ -116,6 +113,15 @@ std::string file_to_string (const std::string& path, size_t start = 0, size_t sp
 std::string file_to_string (const std::string& path, source_position s)
 {
     return file_to_string (path, s.position, s.span);
+}
+
+
+void string_to_file (const std::string& path, const std::string& contents)
+{
+    std::ofstream file {path, std::ios::out | std::ios::binary};
+    if (!file)    throw (errno);
+
+    file.write(contents.data(), contents.size());
 }
 
 
@@ -141,7 +147,7 @@ struct source_location
 
 
     template <typename CharT>
-    constexpr source_location (const CharT* data, size_t position)
+    constexpr source_location (const CharT* data, std::size_t position)
     {
         convert_from(data, data + position);
     }
@@ -169,7 +175,7 @@ struct source_location
 
 
     template <typename CharT>
-    constexpr source_location (std::basic_string_view<CharT> source, size_t position)
+    constexpr source_location (std::basic_string_view<CharT> source, std::size_t position)
     {
         convert_from(source.data(), source.data() + position);
     }
@@ -197,6 +203,8 @@ struct source_location
 
 
 private:
+    // TODO: can maybe add simple memoization here by checking if the address of data is the same as last time
+
     template <typename CharT>
     constexpr void convert_from (const CharT* data, const CharT* position)
     {
@@ -214,7 +222,7 @@ private:
 
         column = position - mark;
     }
-};
+}; // struct source_location
 
 
 /**
@@ -234,8 +242,9 @@ struct token
 /**
  * A token combined with its lexeme, which can be used to construct location information.
  *
- * Metadata can be constructed when needed, so is recommended for use where access to token metadata is rare. The
- * original source pointer must be supplied to calculate this information.
+ * This token type is useful for negating the need to track source location within a scanner. Metadata can be
+ * constructed when needed, so is recommended for use where access to token metadata is rare. The original source
+ * pointer must be supplied to calculate this information.
  */
 template <typename TagType, typename ValueType, typename CharT = char>
 struct token_lex
@@ -256,8 +265,8 @@ struct token_lex
         : tag {tag}, value {value}, lexeme {lexeme}
     {}
 
-    constexpr size_t            position        (const CharT* data) const    { return lexeme.data() - data; }
-    constexpr size_t            span            ()                  const    { return lexeme.length();      }
+    constexpr std::size_t       position        (const CharT* data) const    { return lexeme.data() - data; }
+    constexpr std::size_t       span            ()                  const    { return lexeme.length();      }
     constexpr ::source_position source_position (const CharT* data) const    { return {data, lexeme};       }
     constexpr ::source_location source_location (const CharT* data) const    { return {data, lexeme};       }
 };
@@ -279,8 +288,8 @@ struct token_lex
 //     const std::string     origin;
 
 
-//     constexpr size_t position ()    { return location.position;    }
-//     constexpr size_t span     ()    { return location.span;        }
+//     constexpr std::size_t position ()    { return location.position;    }
+//     constexpr std::size_t span     ()    { return location.span;        }
 //     constexpr int    line     ()    { return source_location.line;   }
 //     constexpr int    column   ()    { return source_location.column; }
 
@@ -300,6 +309,3 @@ struct token_lex
 //         : token_loc {t.tag, t.value, data, t.lexeme.data(), t.data() + t.length(), origin}
 //     {}
 // };
-
-
-#endif // SYNTAX

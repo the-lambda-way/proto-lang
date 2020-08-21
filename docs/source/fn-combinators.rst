@@ -18,7 +18,7 @@ Binds arguments to the back of a function, using the same semantics as ``std::bi
 
 Synopsis
 ------------------------------------------------------------
-1) .. code-block::
+1) ::
 
      template <typename F, typename... Args>
      constexpr /*unspecified*/ bind_back (F&& f, Args&&... args)
@@ -63,7 +63,7 @@ The bound arguments to ``fn::bind_back`` are copied or moved, and are never pass
 Examples
 ------------------------------------------------------------
 
-.. code-block::
+::
 
      #include <iostream>
      #include "scan_view.h"
@@ -95,7 +95,7 @@ fn::identity, fo::identity
 
 Synopsis
 ------------------------------------------------------------
-1) .. code-block::
+1) ::
 
      auto fn::identity =
      []
@@ -104,7 +104,7 @@ Synopsis
 
 Invokes ``f`` with ``args...`` and returns its result.
 
-2) .. code-block::
+2) ::
 
      /*unspecified*/ fo::identity (auto&& f)
 
@@ -134,7 +134,7 @@ One invocation of ``f``.
 Examples
 ------------------------------------------------------------
 
-.. code-block::
+::
 
      #include <iostream>
      #include "fn-combinators.h"
@@ -175,7 +175,7 @@ fn::negate, fo::negate
 
 Synopsis
 ------------------------------------------------------------
-1) .. code-block::
+1) ::
 
      auto fn::negate =
      []
@@ -185,7 +185,7 @@ Synopsis
 
 Invokes ``f`` with ``args...`` and negates the result.
 
-2) .. code-block::
+2) ::
 
      /*unspecified*/ fo::negate (auto&& f)
 
@@ -220,7 +220,7 @@ Negation is suitable for pure functions, where no state changes occur on a posit
 Examples
 ------------------------------------------------------------
 
-.. code-block::
+::
 
      #include <iostream>
      #include "fn-combinators.h"
@@ -261,7 +261,7 @@ fn::optional, fo::optional
 
 Synopsis
 ------------------------------------------------------------
-1) .. code-block::
+1) ::
 
      auto fn::optional =
      []
@@ -270,7 +270,7 @@ Synopsis
 
 Invokes ``f`` with ``args...``, and always returns true.
 
-2) .. code-block::
+2) ::
 
      /*unspecified*/ fo::optional (auto&& f)
 
@@ -300,7 +300,7 @@ One invocation of ``f``.
 Examples
 ------------------------------------------------------------
 
-.. code-block::
+::
 
      #include <iostream>
      #include "fn-combinators.h"
@@ -341,7 +341,7 @@ fn::at_most, fo::at_most
 
 Synopsis
 ------------------------------------------------------------
-1) .. code-block::
+1) ::
 
      auto fn::at_most =
      []
@@ -350,7 +350,7 @@ Synopsis
 
 Invokes ``f`` with ``args...`` up to ``n`` times or failure, and always returns true.
 
-2) .. code-block::
+2) ::
 
      /*unspecified*/ fo::at_most (std::size_t n, auto&& f)
 
@@ -380,7 +380,7 @@ Up to ``n`` invocations of ``f``.
 Examples
 ------------------------------------------------------------
 
-.. code-block::
+::
 
      #include <iostream>
      #include "fn-combinators.h"
@@ -422,7 +422,7 @@ fn::n_times, fo::n_times
 
 Synopsis
 ------------------------------------------------------------
-1) .. code-block::
+1) ::
 
      auto fn::n_times =
      []
@@ -431,7 +431,7 @@ Synopsis
 
 Invokes ``f`` with ``args...`` exactly ``n`` times, stopping early on failure, and returning true if all ``n`` invocations succeed.
 
-2) .. code-block::
+2) ::
 
      /*unspecified*/ fo::n_times (std::size_t n, auto&& f)
 
@@ -461,7 +461,7 @@ Exactly ``n`` invocations of ``f``.
 Examples
 ------------------------------------------------------------
 
-.. code-block::
+::
 
      #include <iostream>
      #include "fn-combinators.h"
@@ -503,7 +503,7 @@ fn::repeat, fo::repeat
 
 Synopsis
 ------------------------------------------------------------
-1) .. code-block::
+1) ::
 
      auto fn::repeat =
      []
@@ -512,7 +512,7 @@ Synopsis
 
 Invokes ``f`` with ``args..`` at least ``min`` times and at most ``max`` times, returning true if at least ``min`` invocations succeeds.
 
-2) .. code-block::
+2) ::
 
      /*unspecified*/ fo::repeat (std::size_t min, std::size_t max, auto&& f)
 
@@ -542,7 +542,7 @@ Between ``min`` and ``max`` invocations of ``f``.
 Examples
 ------------------------------------------------------------
 
-.. code-block::
+::
 
      #include <iostream>
      #include "fn-combinators.h"
@@ -584,7 +584,7 @@ fn::many, fo::many
 
 Synopsis
 ------------------------------------------------------------
-1) .. code-block::
+1) ::
 
      auto fn::many =
      []
@@ -593,7 +593,7 @@ Synopsis
 
 Invokes ``f`` with ``args...`` until failure and always returns true.
 
-2) .. code-block::
+2) ::
 
      /*unspecified*/ fo::many (auto&& f)
 
@@ -628,7 +628,7 @@ A child function which never fails will result in an infinite loop. For instance
 Examples
 ------------------------------------------------------------
 
-.. code-block::
+::
 
      #include <iostream>
      #include "fn-combinators.h"
@@ -670,7 +670,7 @@ fn::at_least, fo::at_least
 
 Synopsis
 ------------------------------------------------------------
-1) .. code-block::
+1) ::
 
      auto fn::at_least =
      []
@@ -679,7 +679,7 @@ Synopsis
 
 Invokes ``f`` with ``args..`` at least ``n`` times until failure, returning true if at least ``n`` invocations succeed.
 
-2) .. code-block::
+2) ::
 
      /*unspecified*/ fo::at_least (std::size_t n, auto&& f)
 
@@ -714,7 +714,7 @@ A child function which never fails will result in an infinite loop. For instance
 Examples
 ------------------------------------------------------------
 
-.. code-block::
+::
 
      #include <iostream>
      #include "fn-combinators.h"
@@ -756,7 +756,7 @@ fn::some, fo::some
 
 Synopsis
 ------------------------------------------------------------
-1) .. code-block::
+1) ::
 
      auto fn::some =
      []
@@ -765,7 +765,7 @@ Synopsis
 
 Invokes ``f`` with ``args...`` until failure, and returns true if at least one invocation succeeds.
 
-2) .. code-block::
+2) ::
 
      /*unspecified*/ fo::some (auto&& f)
 
@@ -800,7 +800,7 @@ A child function which never fails will result in an infinite loop. For instance
 Examples
 ------------------------------------------------------------
 
-.. code-block::
+::
 
      #include <iostream>
      #include "fn-combinators.h"
@@ -842,20 +842,20 @@ fn::any, fo::any
 
 Synopsis
 ------------------------------------------------------------
-1) .. code-block::
+1) ::
 
      bool fn::any (boolean_invocable auto&&... f)
 
 Invokes a set of functions until one returns true. Returns false if none succeed.
 
-2) .. code-block::
+2) ::
 
      template <class... Args, boolean_invocable<Args...>... F>
      bool fn::any (std::tuple<Args...>&& args, F&&... f)
 
 Invokes a set of functions until one returns true, passing each function the elements of ``args``. Returns false if none succeed.
 
-3) .. code-block::
+3) ::
 
      /*unspecified*/ fo::any (auto&&... f)
 
@@ -885,7 +885,7 @@ The sum of the invocations of functions from the set ``f...``.
 Examples
 ------------------------------------------------------------
 
-.. code-block::
+::
 
      #include <iostream>
      #include "fn-combinators.h"
@@ -930,20 +930,20 @@ fn::all, fo::all
 
 Synopsis
 ------------------------------------------------------------
-1) .. code-block::
+1) ::
 
      bool fn::all (boolean_invocable auto&&... f)
 
 Invokes a set of functions while they return true. Returns false if any failed.
 
-2) .. code-block::
+2) ::
 
      template <class... Args, boolean_invocable<Args...>... F>
      bool fn::all (std::tuple<Args...>&& args, F&&... f)
 
 Invokes a set of functions while they return true, passing each the elements of ``args``. Returns false if any failed.
 
-3) .. code-block::
+3) ::
 
      /*unspecified*/ fo::all (auto&&... f)
 
@@ -973,7 +973,7 @@ The sum of the invocations of functions from the set ``f...``.
 Examples
 ------------------------------------------------------------
 
-.. code-block::
+::
 
      #include <iostream>
      #include "fn-combinators.h"

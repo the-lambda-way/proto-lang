@@ -10,7 +10,7 @@ Given a mutable range, advances its iterator if its referenced value satisfies a
 
 Synopsis
 ------------------------------------------------------------
-1) .. code-block::
+1) ::
 
      template <std::forward_iterator I, std::sentinel_for<I> S, class E>
           requires (!std::ranges::range<E>) &&     // reject potential equality overload between a range and an element
@@ -19,7 +19,7 @@ Synopsis
 
 Advances ``first`` by one if its dereferenced value equals ``element``.
 
-2) .. code-block::
+2) ::
 
      template <mutable_forward_range R, class E>
           requires (!std::ranges::range<E>) &&     // reject potential equality overload between a range and an element
@@ -28,7 +28,7 @@ Advances ``first`` by one if its dereferenced value equals ``element``.
 
 Same as (1), using ``r`` as the source range.
 
-3) .. code-block::
+3) ::
 
      template <std::forward_iterator I1, std::sentinel_for<I1> S1,
                std::forward_iterator I2, std::sentinel_for<I2> S2>
@@ -37,7 +37,7 @@ Same as (1), using ``r`` as the source range.
 
 Advances ``first1`` if ``[first1, last1)`` begins with the elements of ``[first2, last2)``. After a successful match, ``first1`` has been advanced by the size of ``[first2, last2)``.
 
-4) .. code-block::
+4) ::
 
      template <mutable_forward_range R, std::forward_iterator I, std::sentinel_for<I> S>
           requires indirectly_equality_comparable<std::ranges::iterator_t<R>, I>
@@ -45,7 +45,7 @@ Advances ``first1`` if ``[first1, last1)`` begins with the elements of ``[first2
 
 Same as (3), using ``r`` as the source range.
 
-5) .. code-block::
+5) ::
 
      template <std::forward_iterator I, std::sentinel_for<I> S, std::ranges::input_range R>
           requires indirectly_equality_comparable<std::ranges::iterator_t<R>, I>
@@ -53,7 +53,7 @@ Same as (3), using ``r`` as the source range.
 
 Same as (3), using ``r`` as the comparison range.
 
-6) .. code-block::
+6) ::
 
      template <mutable_forward_range R1, std::ranges::input_range R2>
           requires range_equality_comparable<R1, R2>
@@ -61,7 +61,7 @@ Same as (3), using ``r`` as the comparison range.
 
 Same as (3), using ``r1`` as the source range and ``r2`` as the comparison range.
 
-7) .. code-block::
+7) ::
 
      template <class CharT, std::forward_iterator I, std::sentinel_for<I> S>
           requires std::equality_comparable_with<CharT, std::iter_value_t<I>>
@@ -69,7 +69,7 @@ Same as (3), using ``r1`` as the source range and ``r2`` as the comparison range
 
 Same as (3), using ``std::string_view {comparison}`` as the comparison range.
 
-8) .. code-block::
+8) ::
 
      template <class CharT, mutable_forward_range R>
           requires std::equality_comparable_with<CharT, std::ranges::range_value_t<R>>
@@ -77,7 +77,7 @@ Same as (3), using ``std::string_view {comparison}`` as the comparison range.
 
 Same as (3), using ``r`` as the source range and ``std::string_view {comparision}`` as the comparison range.
 
-9) .. code-block::
+9) ::
 
      template <std::forward_iterator I, std::sentinel_for<I> S,
                std::indirect_unary_predicate<I> P>
@@ -85,7 +85,7 @@ Same as (3), using ``r`` as the source range and ``std::string_view {comparision
 
 Advances ``first`` by one if ``std::invoke(pred, *first)`` returns true;
 
-10) .. code-block::
+10) ::
 
      template <mutable_forward_range R,
                std::indirect_unary_predicate<std::ranges::iterator_t<R>> P>
@@ -114,7 +114,7 @@ Complexity
 Examples
 ------------------------------------------------------------
 
-.. code-block::
+::
 
      #include <iostream>
      #include "scan_view.h"
@@ -154,7 +154,7 @@ Given a mutable range, advances its iterator by one if its dereferenced value fa
 
 Synopsis
 ------------------------------------------------------------
-1) .. code-block::
+1) ::
 
      template <std::forward_iterator I, std::sentinel_for<I> S, class E>
           requires (!std::ranges::range<E>) &&     // reject potential equality overload between a range and an element
@@ -163,7 +163,7 @@ Synopsis
 
 Advances ``first`` by one if its dereferenced value doesn't equal ``element``.
 
-2) .. code-block::
+2) ::
 
      template <mutable_forward_range R, class E>
           requires (!std::ranges::range<E>) &&     // reject potential equality overload between a range and an element
@@ -172,7 +172,7 @@ Advances ``first`` by one if its dereferenced value doesn't equal ``element``.
 
 Same as (1), using ``r`` as the source range.
 
-3) .. code-block::
+3) ::
 
      template <std::forward_iterator I1, std::sentinel_for<I1> S1,
                std::forward_iterator I2, std::sentinel_for<I2> S2>
@@ -181,7 +181,7 @@ Same as (1), using ``r`` as the source range.
 
 Advances ``first1`` by one if ``[first1, last1)`` doesn't begin with the elements of ``[first2, last2)``.
 
-4) .. code-block::
+4) ::
 
      template <mutable_forward_range R, std::forward_iterator I, std::sentinel_for<I> S>
           requires indirectly_equality_comparable<std::ranges::iterator_t<R>, I>
@@ -189,7 +189,7 @@ Advances ``first1`` by one if ``[first1, last1)`` doesn't begin with the element
 
 Same as (3), using ``r`` as the source range.
 
-5) .. code-block::
+5) ::
 
      template <std::forward_iterator I, std::sentinel_for<I> S, std::ranges::input_range R>
           requires indirectly_equality_comparable<std::ranges::iterator_t<R>, I>
@@ -197,7 +197,7 @@ Same as (3), using ``r`` as the source range.
 
 Same as (3), using ``r`` as the comparison range.
 
-6) .. code-block::
+6) ::
 
      template <mutable_forward_range R1, std::ranges::input_range R2>
           requires range_equality_comparable<R1, R2>
@@ -205,7 +205,7 @@ Same as (3), using ``r`` as the comparison range.
 
 Same as (3), using ``r1`` as the source range and ``r2`` as the comparison range.
 
-7) .. code-block::
+7) ::
 
      template <class CharT, std::forward_iterator I, std::sentinel_for<I> S>
           requires std::equality_comparable_with<CharT, std::iter_value_t<I>>
@@ -213,7 +213,7 @@ Same as (3), using ``r1`` as the source range and ``r2`` as the comparison range
 
 Same as (3), using ``std::string_view {comparison}`` as the comparison range.
 
-8) .. code-block::
+8) ::
 
      template <class CharT, mutable_forward_range R>
           requires std::equality_comparable_with<CharT, std::ranges::range_value_t<R>>
@@ -221,7 +221,7 @@ Same as (3), using ``std::string_view {comparison}`` as the comparison range.
 
 Same as (3), using ``r`` as the source range and ``std::string_view {comparision}`` as the comparison range.
 
-9) .. code-block::
+9) ::
 
      template <std::forward_iterator I, std::sentinel_for<I> S,
                std::indirect_unary_predicate<I> P>
@@ -229,7 +229,7 @@ Same as (3), using ``r`` as the source range and ``std::string_view {comparision
 
 Advances ``first`` by one if ``std::invoke(pred, *first)`` returns ``false``.
 
-10) .. code-block::
+10) ::
 
      template <mutable_forward_range R,
                std::indirect_unary_predicate<std::ranges::iterator_t<R>> P>
@@ -237,7 +237,7 @@ Advances ``first`` by one if ``std::invoke(pred, *first)`` returns ``false``.
 
 Same as (9), using ``r`` as the source range.
 
-11) .. code-block::
+11) ::
 
      template <std::forward_iterator I, std::sentinel_for<I> S,
                boolean_invocable<I, S> F>
@@ -245,7 +245,7 @@ Same as (9), using ``r`` as the source range.
 
 Advances ``first`` by one if ``std::invoke(f, copy, last)`` returns ``false``, where ``copy`` is a copy of ``first``.
 
-12) .. code-block::
+12) ::
 
      template <mutable_forward_range R, boolean_invocable<R>>
      bool scan_if_not (R&& r, F f) const
@@ -273,7 +273,7 @@ Complexity
 Examples
 ------------------------------------------------------------
 
-.. code-block::
+::
 
      #include <iostream>
      #include "scan_view.h"

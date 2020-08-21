@@ -73,8 +73,8 @@ exclude_patterns = []
 # The name of the Pygments (syntax highlighting) style to use.
 pygments_style = None
 
-primary_domain = "cpp"
-highlight_language = "cpp"
+primary_domain = 'cpp'
+highlight_language = 'cpp'
 
 
 # -- Options for HTML output -------------------------------------------------

@@ -39,7 +39,7 @@ Set up
 ========================================================================================================================
 The following definitions are used throughout the examples:
 
-.. code-block::
+::
 
      #include <string>
      #include <string_view>
@@ -60,7 +60,7 @@ The following definitions are used throughout the examples:
 Using pointers
 ========================================================================================================================
 
-.. code-block::
+::
 
      number_token number (scan_view& s)
      {
@@ -84,7 +84,7 @@ Using pointers
 Using algorithms
 ========================================================================================================================
 
-.. code-block::
+::
 
      number_token number (scan_view& s)
      {
@@ -108,7 +108,7 @@ Using algorithms
 Using higher-order functions
 ========================================================================================================================
 
-.. code-block::
+::
 
      number_token number (scan_view& s)
      {
@@ -128,7 +128,7 @@ Using higher-order functions
 Using declarative features
 ========================================================================================================================
 
-.. code-block::
+::
 
      auto integer    = Scan::some(is_digit);
      auto fractional = Scan::join('.', integer);
@@ -152,7 +152,7 @@ Using declarative features
 Using grammar-like features
 ========================================================================================================================
 
-.. code-block::
+::
 
      auto digit   = GrammarExp >> '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9';
      auto integer = +digit;
@@ -179,7 +179,7 @@ Using grammar-like features
 Using built-in definitions
 ========================================================================================================================
 
-.. code-block::
+::
 
      #include "pattern.h"
 

@@ -202,4 +202,3 @@ The Rosetta Code lexical analyzer (http://rosettacode.org/wiki/Compiler/lexical_
 A testing framework will soon be added using Catch2 (https://github.com/catchorg/Catch2).
 
 Proper documentation has begin, using Sphinx with a Read The Docs theme.
-

@@ -13,6 +13,10 @@ using std::move;
 #define PatLib PL
 #endif
 
+using namespace Pattern;
+using std::forward_iterator;
+using std::sentinel_for;
+
 
 namespace PatLib {
 
@@ -33,7 +37,7 @@ namespace PatLib {
     public:                                                                                      \
         class_name (Parameters... params) : parameters {move(params)...} {}                      \
                                                                                                  \
-        bool operator() (mutable_range& r)                                                       \
+        bool operator() (mutable_range auto& r)                                                  \
         {                                                                                        \
             return range_impl(r, parameters, std::index_sequence_for<Parameters...>{});          \
         }                                                                                        \
@@ -48,7 +52,7 @@ namespace PatLib {
         const std::tuple<Parameters...> parameters;                                              \
                                                                                                  \
         template <typename Tuple, std::size_t... I>                                              \
-        bool range_impl (mutable_range& r, Tuple&& t, std::index_sequence<I...>)                 \
+        bool range_impl (mutable_range auto& r, Tuple&& t, std::index_sequence<I...>)            \
         {                                                                                        \
             return function_name(r, std::get<I>(forward<Tuple>(t))...);                          \
         }                                                                                        \
@@ -82,6 +86,8 @@ namespace Detail
     MAKE_SCANNER(any_t,         advance_any_if);
     MAKE_SCANNER(join_t,        advance_join_if);
 }
+
+#undef MAKE_SCANNER
 
 
 template <typename Expr, typename... Args>

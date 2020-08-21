@@ -70,8 +70,8 @@ number_token number2 (scan_view& s)
 // --------------------------------------------------
 number_token number3 (scan_view& s)
 {
-     constexpr auto integer    = Scan::some(is_digit);
-     constexpr auto fractional = Scan::join('.', integer);
+     static constexpr auto integer    = Scan::some(is_digit);
+     static constexpr auto fractional = Scan::join('.', integer);
 
      s.save();
 

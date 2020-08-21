@@ -195,11 +195,11 @@ Work continues on separating the core components into independent, but composabl
 
 The Pattern library will strive to be fully compatible with C++20 ranges and their associated tools.
 
-The Lox language (*http://www.craftinginterpreters.com*) is being used as a test bed for the library's features. An implementation of the language in plain C++ is found in the file *lox-test.cpp*. At this point it tokenizes a portion of the language (up to chapter 4 of the *Crafting Interpreters* book).
+The Lox language (http://www.craftinginterpreters.com) is being used as a test bed for the library's features. An implementation of the language in plain C++ is found in the file *lox-test.cpp*. At this point it tokenizes a portion of the language (up to chapter 4 of the *Crafting Interpreters* book).
 
-The Rosetta Code lexical analyzer (*http://rosettacode.org/wiki/Compiler/lexical_analyzer*) has been added as another test bed for the language (but hasn't been committed yet). The Super Tiny Compiler (https://github.com/jamiebuilds/the-super-tiny-compiler) will be added next. Other language-related applications will be added to this list as time goes on.
+The Rosetta Code lexical analyzer (http://rosettacode.org/wiki/Compiler/lexical_analyzer) has been added as another test bed for the language (but hasn't been committed yet). The Super Tiny Compiler (https://github.com/jamiebuilds/the-super-tiny-compiler) will be added next. Other language-related applications will be added to this list as time goes on.
 
-A testing framework will soon be added using Catch2 (*https://github.com/catchorg/Catch2*).
+A testing framework will soon be added using Catch2 (https://github.com/catchorg/Catch2).
 
 Proper documentation has begin, using Sphinx with a Read The Docs theme.
 

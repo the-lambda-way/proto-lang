@@ -4,9 +4,20 @@
  *
  * Scan View
  *
- * A non-owning reference to a character sequence, with an internal iterator. Models the mutable_range concept.
+ * A mutable range useful for scanning a character sequence.
  *
  */
+
+
+
+// Think again about whether this is the wrong abstraction level. Scouting iterator can handle the paired iterator
+// features, while a scanning object should perhaps provide more additional features than simply substr and copy.
+//
+
+
+
+
+
 
 #pragma once
 
@@ -47,10 +58,10 @@ public:
 
      // Container traits
      using traits_type            = Traits;
-     using const_pointer          = const value_type*;
-     using const_reference        = const value_type&;
-     using const_iterator         = const value_type*;
-     using iterator               = const_iterator;
+     using const_pointer          = const pointer;
+     using const_reference        = const reference;
+     using const_iterator         = const iterator_type;
+     using iterator               = iterator_type;
      using const_reverse_iterator = std::reverse_iterator<const_iterator>;
      using reverse_iterator       = const_reverse_iterator;
      using size_type		    = difference_type;
@@ -97,7 +108,7 @@ public:
      // Iterators
      // --------------------------------------------------
      constexpr iterator&              begin   ()       noexcept     { return cursor;   }
-     constexpr iterator               end     () const noexcept     { return last      }
+     constexpr iterator               end     () const noexcept     { return last;     }
      constexpr const_iterator&        cbegin  () const noexcept     { return cursor;   }
      constexpr const_iterator         cend    () const noexcept     { return last;     }
      constexpr reverse_iterator       rbegin  ()       noexcept     { return {last};   }
@@ -118,7 +129,7 @@ public:
      // --------------------------------------------------
      // Element Access
      // --------------------------------------------------
-     constexpr const_pointer data () const noexcept     { return scout; }
+     constexpr const_pointer data () const noexcept     { return cursor; }
 
      constexpr value_type operator[] (size_type n) const noexcept
      {
@@ -178,11 +189,12 @@ public:
      constexpr self_type  operator-- (int)                    { return post_decrement(); }
      constexpr self_type& operator-= (difference_type n)      { return backtrack(n);     }
 
-
      friend constexpr self_type operator+ (self_type s, difference_type n)     { return s += n; }
      friend constexpr self_type operator+ (difference_type n, self_type s)     { return s += n; }
      friend constexpr self_type operator- (self_type s, difference_type n)     { return s -= n; }
-     friend constexpr self_type operator- (difference_type n, self_type s)     { return s -= n; }
+
+     friend constexpr difference_type operator-(self_type s, const_iterator i)     { return s.cursor - i; }
+     friend constexpr difference_type operator-(const_iterator i, self_type s)     { return i - s.cursor; }
 
      constexpr std::weak_ordering operator<=> (const self_type& other) const     { return cursor <=> other.cursor; }
      constexpr bool               operator==  (const self_type& other) const     { return cursor == other.cursor;  }
@@ -213,13 +225,13 @@ public:
      constexpr std::string_view skipped (size_type from_front = 0, size_type from_back = 0) const noexcept(false)
      {
           if (from_front > size())     throw std::out_of_range("basic_scan_view::skipped: from_front > size()");
-          return {cursor + from_front, size() - from_front - from_back};
+          return {retainer + from_front, cursor - from_front - from_back};
      }
 
      constexpr std::string copy_skipped (size_type from_front = 0, size_type from_back = 0) const noexcept(false)
      {
           if (from_front > size())     throw std::out_of_range("basic_scan_view::copy_skipped: from_front > size()");
-          return {cursor + from_front, size() - from_front - from_back};
+          return {retainer + from_front, cursor - from_front - from_back};
      }
 };
 

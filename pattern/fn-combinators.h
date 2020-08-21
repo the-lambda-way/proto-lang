@@ -7,7 +7,7 @@
  * Facilities for declaratively composing functions.
  */
 
-// Compare to https://github.com/rollbear/lift
+// Compare to https://github.com/rollbear/lift and, of cource, c++20 views
 
 // TODO: A well-designed Curry function object would allow us to combine namespaces fn and fo without loss of
 // usability.
@@ -213,54 +213,18 @@ auto some =
 };
 
 
-template <class>      constexpr bool is_tuple                   = false;
-template <class... T> constexpr bool is_tuple<std::tuple<T...>> = true;
-
 struct any_t
 {
-     bool operator () (boolean_invocable auto&&... f)
+     bool operator() (boolean_invocable auto&&... f)
      {
           return (... || std::invoke(std::forward<decltype(f)>(f)));
      }
 
-     template <class... Args>
-     bool operator () (Args&&... args)
-     {
-          return impl(std::make_index_sequence<sizeof...(Args) - 1>{}, std::forward<Args>(args)...);
-     };
-
-
-private:
-     // set I to be one less than the number of arguments, so that the last element is not accessed twice
-     template <size_t... I, class... Args>
-     bool impl (std::index_sequence<I...>, Args&&... args)
-     {
-          auto packed_args = std::make_tuple(std::forward<Args>(args)...);
-          constexpr int last = sizeof...(Args) - 1;
-          using LastType = std::tuple_element_t<last, decltype(packed_args)>;
-
-          if constexpr (is_tuple<LastType>)
-               return deduced_args_impl(
-                    std::forward<decltype(std::get<last>(packed_args))>(std::get<last>(packed_args)),
-                    std::forward<decltype(std::get<I>(packed_args))>(std::get<I>(packed_args))...
-               );
-          else
-               return no_args_impl(std::forward<Args>(args)...);
-     }
-
-     template <class... F, class... Args>
-          requires (... && boolean_invocable<F, Args...>)
-     bool deduced_args_impl (std::tuple<Args...> args, F&&... f)
+     template <class... Args, boolean_invocable<Args...>... F>
+     bool operator() (std::tuple<Args...>&& args, F&&... f)
      {
           return (... || std::apply(std::forward<F>(f), args));
      }
-
-     bool no_args_impl (boolean_invocable auto&&... f)
-     {
-          return (... || std::invoke(std::forward<decltype(f)>(f)));
-     }
-
-
 } any;
 
 
@@ -272,13 +236,14 @@ struct all_t
      }
 
      template <class... Args, boolean_invocable<Args...>... F>
-     bool operator () (F&&... f, std::tuple<Args...>&& args)
+     bool operator () (std::tuple<Args...>&& args, F&&... f)
      {
           return (... && std::apply(std::forward<F>(f), args));
      };
 } all;
 
 } // namespace fn
+
 
 namespace fo {
 
@@ -309,7 +274,7 @@ auto any = [] (auto&&... f)
           [f...]
           <class... CallArgs>
                requires (... && boolean_invocable<decltype(f), CallArgs...>)
-          (CallArgs&&... call_args) -> bool
+          (CallArgs&&... call_args) mutable -> bool
           {
                return (... || std::invoke(f, call_args...));
           };
@@ -322,7 +287,7 @@ auto all = [] (auto&&... f)
           [f...]
           <class... CallArgs>
                requires (... && boolean_invocable<decltype(f), CallArgs...>)
-          (CallArgs&&... call_args) -> bool
+          (CallArgs&&... call_args) mutable -> bool
           {
                return (... && std::invoke(f, call_args...));
           };

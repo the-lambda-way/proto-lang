@@ -12,6 +12,12 @@ If you feel like chatting, feel free to stop on by the Discord server (https://d
 
 
 
+# Installation
+
+Proto is currently a header-only library. If you want to experiment with it, just download the `source/pattern/` folder and drop it somewhere in your project.
+
+
+
 # Design
 
 Since syntax manipulation is a core part of the language, it is important to have a robust set of parsing tools to build upon. The Pattern library is being developed as a user-friendly toolkit for building recursive-descent parsers. Because Proto is meant to be more of a framework than a traditional language, every effort is made to adapt the C++ implementation to C++ conventions. But once it is developed to a sufficient point, the library will be used to bootstrap the Proto language proper, which should be much more flexible in developing the stronger features of the library (such as lisp-macros). I intend to continue developing the C++ library alongside the Proto version, matching the feature set as much as possible.
@@ -181,8 +187,22 @@ myLang.add_rule(PatDef::decimal, [](auto m) -> number_token { return {TokenType:
 
 # Documentation
 
-[Read the docs.](https://the-proto-language.readthedocs.io/en/cpp20/)
+[Read the docs.](https://the-proto-language.readthedocs.io/en/latest/)
 
+
+# Development
+
+As a header-only library, all source files reside under the `source/` folder. Compiled code goes into the `build/` folder and follows the same folder structure as their sources.
+
+Testing is done with Catch2 (source included). All test files use the extension `.test.cpp`. Unit tests use the same name and folder structure as the file they are testing. You can build the tests using `make tests`.
+
+Documentation is written in [reStructuredText](https://www.sphinx-doc.org/en/master/usage/restructuredtext/basics.html) and built with [Sphinx](https://www.sphinx-doc.org/en/master/index.html). Documentation files use the same name and folder structure as the file they are documenting.
+
+[Read the Docs](https://readthedocs.org/) updates itself automatically from the repository once a day (assuming you are working on the original repo).
+
+Sphinx requires at least Python 3.6. If you have pip, you can install Sphinx with `pip install sphinx `. If you prefer a different method of installation, refer to the instructions here: https://www.sphinx-doc.org/en/master/usage/installation.html.
+
+Once Sphinx is installed, you can build the documentation by running `make tests` from the project's root, or by running `make html` inside inside the `docs/source/` folder.
 
 
 # Current Progress

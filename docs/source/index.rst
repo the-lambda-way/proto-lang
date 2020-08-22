@@ -10,7 +10,7 @@ Proto Language
     :maxdepth: 2
     :caption: Contents:
 
-    pattern
+    pattern/pattern
 
 
 

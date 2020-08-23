@@ -194,15 +194,19 @@ myLang.add_rule(PatDef::decimal, [](auto m) -> number_token { return {TokenType:
 
 As a header-only library, all source files reside under the `source/` folder. Compiled code goes into the `build/` folder and follows the same folder structure as their sources.
 
-Testing is done with Catch2 (source included). All test files use the extension `.test.cpp`. Unit tests use the same name and folder structure as the file they are testing. You can build the tests using `make tests`.
+Testing is done with [Catch2](https://github.com/catchorg/Catch2) (source included). All test files reside in the `test/` folder and use the extension `.test.cpp`. Unit tests use the same name and folder structure as the file they are testing. Include `catch2/catch.hpp` in any new test file. You can build the tests using `make tests`.
 
-Documentation is written in [reStructuredText](https://www.sphinx-doc.org/en/master/usage/restructuredtext/basics.html) and built with [Sphinx](https://www.sphinx-doc.org/en/master/index.html). Documentation files use the same name and folder structure as the file they are documenting.
+If you are using VS Code, Catch2 integrates well with the C++ TestMate extension to automatically run tests and display CodeLenses within the test files.
+
+Documentation is written in [reStructuredText](https://www.sphinx-doc.org/en/master/usage/restructuredtext/basics.html) and built with [Sphinx](https://www.sphinx-doc.org/en/master/index.html). Documentation files reside in the `docs/` folder and use the same name and folder structure as the file they are documenting.
 
 [Read the Docs](https://readthedocs.org/) updates itself automatically from the repository once a day (assuming you are working on the original repo).
 
-Sphinx requires at least Python 3.6. If you have pip, you can install Sphinx with `pip install sphinx `. If you prefer a different method of installation, refer to the instructions here: https://www.sphinx-doc.org/en/master/usage/installation.html.
+Sphinx requires at least Python 2.7 or Python 3.3. Proto documentation assumes the latest version of Sphinx, so if you have a system installation already, check it is not using an old version which may be incompatible.
 
-Once Sphinx is installed, you can build the documentation by running `make tests` from the project's root, or by running `make html` inside inside the `docs/source/` folder.
+If you have apt on your system, you can install Sphinx using `apt install python3-sphinx`. Other installation instructions are found here: https://www.sphinx-doc.org/en/master/usage/installation.html.
+
+Once Sphinx is installed, you must create a link to your sphinx-build binary in the `external/` folder. You can build the documentation by running `make docs` from the project's root, or by running `make html` inside the `docs/source/` folder.
 
 
 # Current Progress

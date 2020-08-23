@@ -3,7 +3,7 @@
 
 # You can set these variables from the command line.
 SPHINXOPTS    =
-SPHINXBUILD   = /home/mike/.local/bin/sphinx-build
+SPHINXBUILD   = ../external/sphinx-build
 SOURCEDIR     = source
 BUILDDIR      = ../build/docs/
 

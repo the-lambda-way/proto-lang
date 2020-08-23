@@ -23,16 +23,30 @@ tests: build/tests/main.test.o $(TEST_EXES)
 
 
 build/%.test.out: %.test.cpp
-	mkdir -p $(@D)
-	$(COMPILE) build/tests/main.test.o $< -o $@
+	@echo "building $(@F) ..."
+	@mkdir -p $(@D)
+	@$(COMPILE) build/tests/main.test.o $< -o $@
 
 
 build/tests/main.test.o: tests/main.test.cpp
-	mkdir -p $(@D)
-	$(COMPILE) $< -c -o $@
+	@echo "building $(@F) ..."
+	@mkdir -p $(@D)
+	@$(COMPILE) $< -c -o $@
 
 
 # Dependency rules included at bottom of file
+
+# Recompiles on change, but doesn't run, so the test harness can autorun. Pass src= on the command line.
+.PHONY: watch-test
+watch-test: exe=$($(src:/tests/=/build/tests/):.cpp=.out)
+watch-test:
+	@while true; do                            \
+		clear;                                \
+		$(MAKE) $(exe) --no-print-directory;  \
+		                                      \
+		echo "watching $(notdir $(src)) ..."; \
+		inotifywait -qq -e modify $(src);     \
+	done
 
 
 # ======================================================================================================================

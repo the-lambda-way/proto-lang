@@ -22,10 +22,11 @@ TEST_EXES := $(addprefix build/,$(TEST_SRCS:.cpp=.out))
 tests: build/tests/main.test.o $(TEST_EXES)
 
 
+# Uses -ggdb so that VSCode C++ TestMate doesn't need to recompile first when debugging. Would it be better to remove?
 build/%.test.out: %.test.cpp
 	@echo "building $(@F) ..."
 	@mkdir -p $(@D)
-	@$(COMPILE) build/tests/main.test.o $< -o $@
+	@$(COMPILE) -ggdb build/tests/main.test.o $< -o $@
 
 
 build/tests/main.test.o: tests/main.test.cpp
@@ -36,7 +37,8 @@ build/tests/main.test.o: tests/main.test.cpp
 
 # Dependency rules included at bottom of file
 
-# Recompiles on change, but doesn't run, so the test harness can autorun. Pass src= on the command line.
+
+# Recompiles on change, so the test harness can autorun. Pass src= on the command line.
 .PHONY: watch-test
 watch-test: exe=$($(src:/tests/=/build/tests/):.cpp=.out)
 watch-test:
@@ -54,6 +56,9 @@ watch-test:
 # ======================================================================================================================
 .PHONY: examples
 examples:
+
+# Each example should have a file example.expected for testing its output
+# Create a driver for comparing example.out to example.expected
 
 
 # ======================================================================================================================

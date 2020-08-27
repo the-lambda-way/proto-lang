@@ -2,7 +2,7 @@
 # Automatic variables: https://www.gnu.org/software/make/manual/html_node/Automatic-Variables.html
 
 CXX      := /usr/local/gcc-10.2.0/bin/g++-10.2
-CXXFLAGS := -O3 -MMD
+CXXFLAGS := -MMD
 CPPFLAGS := -std=c++20
 
 ROOT     := /home/mike/projects/languages/proto/repo
@@ -10,12 +10,28 @@ INCLUDES := -I/usr/local/gcc-10.2.0/include/c++/10.2.0/ -I$(ROOT)/external -I$(R
 
 COMPILE  := $(CXX) $(CXXFLAGS) $(CPPFLAGS) $(INCLUDES)
 
+# Set the display of the time command. See https://man7.org/linux/man-pages/man1/time.1.html
+TIME_FORMAT="%E elapsed  (%U user  %S system)  |  %P CPU  |  %Xk text  %Dk data  %Mk max  |  %I inputs  %O outputs  |  %F major + %R minor pagefaults  |  %W swaps\n"
+
+
+
+.PHONY: error
+error:
+	@echo "Error: no default make rule provided"
+
+
+.PHONY: all
+all:
+	$(MAKE) tests
+	$(MAKE) examples
+	$(MAKE) docs
+
 
 # ======================================================================================================================
 # Tests
 # ======================================================================================================================
-TEST_SRCS := $(filter-out tests/main.test.cpp,$(shell find tests/ -name "*.test.cpp"))
-TEST_EXES := $(addprefix build/,$(TEST_SRCS:.cpp=.out))
+TEST_SRCS = $(filter-out tests/main.test.cpp,$(shell find tests/ -name "*.test.cpp"))
+TEST_EXES = $(addprefix build/,$(TEST_SRCS:.cpp=.out))
 
 
 .PHONY: tests
@@ -26,29 +42,33 @@ tests: build/tests/main.test.o $(TEST_EXES)
 build/%.test.out: %.test.cpp
 	@echo "building $(@F) ..."
 	@mkdir -p $(@D)
-	@$(COMPILE) -ggdb build/tests/main.test.o $< -o $@
+	@time -f $(TIME_FORMAT) -- $(COMPILE) -ggdb build/tests/main.test.o $< -o $@
 
 
 build/tests/main.test.o: tests/main.test.cpp
 	@echo "building $(@F) ..."
 	@mkdir -p $(@D)
-	@$(COMPILE) $< -c -o $@
+	@time -f $(TIME_FORMAT) -- $(COMPILE) -O3 -ggdb $< -c -o $@
 
 
 # Dependency rules included at bottom of file
 
 
-# Recompiles on change, so the test harness can autorun. Pass src= on the command line.
+# Recompiles on change, so the test harness can autorun. Pass relative src= on the command line.
 .PHONY: watch-test
-watch-test: exe=$($(src:/tests/=/build/tests/):.cpp=.out)
+watch-test: exe=build/$(basename $(src)).out
 watch-test:
-	@while true; do                            \
-		clear;                                \
-		$(MAKE) $(exe) --no-print-directory;  \
-		                                      \
-		echo "watching $(notdir $(src)) ..."; \
-		inotifywait -qq -e modify $(src);     \
-	done
+	@if [ -f "$(ROOT)/$(src)" ]; then                   \
+		while true; do                                 \
+			clear;                                    \
+			$(MAKE) $(exe) --no-print-directory;      \
+			                                          \
+			echo "watching $(notdir $(src)) ...";     \
+			inotifywait -qq -e modify $(ROOT)/$(src); \
+		done;                                          \
+	else                                                \
+		echo "file doesn't exist: $(src)";             \
+	fi
 
 
 # ======================================================================================================================

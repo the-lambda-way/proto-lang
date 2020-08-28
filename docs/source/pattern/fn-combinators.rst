@@ -851,6 +851,9 @@ Invokes a set of functions until one returns true. Returns false if none succeed
 2) ::
 
      template <class... Args, boolean_invocable<Args...>... F>
+     bool fn::any (std::tuple<Args...>& args, F&&... f)
+
+     template <class... Args, boolean_invocable<Args...>... F>
      bool fn::any (std::tuple<Args...>&& args, F&&... f)
 
 Invokes a set of functions until one returns true, passing each function the elements of ``args``. Returns false if none succeed.
@@ -937,6 +940,9 @@ Synopsis
 Invokes a set of functions while they return true. Returns false if any failed.
 
 2) ::
+
+     template <class... Args, boolean_invocable<Args...>... F>
+     bool fn::all (std::tuple<Args...>& args, F&&... f)
 
      template <class... Args, boolean_invocable<Args...>... F>
      bool fn::all (std::tuple<Args...>&& args, F&&... f)

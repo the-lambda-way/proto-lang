@@ -12,33 +12,143 @@ using namespace Pattern;
 // =====================================================================================================================
 // fn::bind_back
 // =====================================================================================================================
-// TODO: Check that an object of every value type can be passed as a function or bound arg or calling arg
-
-// SCENARIO("The bind_back function should be specializable on any callable type")
-// {
-//      REQUIRE( false );
-// }
+SCENARIO("The bind_back function should return an object.")
+{
+     auto an_object = fn::bind_back([] () { return true; });
+}
 
 
-// SCENARIO("The bind_back function should bind an unspecified number of arguments after the bound function")
-// {
-//      REQUIRE( false );
-// }
+SCENARIO("The bind_back function should take a bound function by any value category.")
+{
+     GIVEN("an lvalue, an xvalue, and a prvalue of a function")
+     {
+          // Reference: https://en.cppreference.com/w/cpp/language/decltype
+
+          auto returns_true = [] () { return true; };
 
 
-// SCENARIO("Calling a bind_back_t object should invoke is bound function with additional arguments in a specific way")
-// {
-//      GIVEN("A bind_back_t object with bound arguments")
-//      {
-//           WHEN("it is called with an unspecified number of calling arguments")
-//           {
-//                THEN("it should call the bound function with the calling arguments followed by the bound arguments")
-//                {
-//                     REQUIRE( false );
-//                }
-//           }
-//      }
-// }
+          THEN("the bind_back function can be called with each one.")
+          {
+               // Cannot construct an assertion with an overloaded function. But if it compiles, it passed.
+               fn::bind_back(returns_true);
+               fn::bind_back(std::move(returns_true));
+               fn::bind_back([] () { return true; });
+          }
+     }
+}
+
+
+SCENARIO("The bind_back function should be invocable with any callable type.")
+{
+     GIVEN("Every type of callable object")
+     {
+          // Although instances of every type are not explictly needed for the tests, it helps with comprehension.
+          bool (*fun_ptr) () = [] () { return true; };
+          auto closure = [] () { return true; };
+
+          struct a_class
+          {
+               bool fun () { return true; }
+
+               // Data members are callable, see https://en.cppreference.com/w/cpp/named_req/Callable
+               bool data;
+          };
+
+          auto ptr_to_mbr_function = &a_class::fun;
+          auto ptr_to_data_mbr = &a_class::data;
+
+          struct fun_object_t
+          {
+               bool operator() () { return true; }
+          } fun_object;
+
+
+          THEN("the bind_back function can be called with each object.")
+          {
+               // Cannot construct an assertion with an overloaded function. But if it compiles, it passed.
+               fn::bind_back(fun_ptr);
+               fn::bind_back(closure);
+               fn::bind_back(ptr_to_mbr_function);
+               fn::bind_back(ptr_to_data_mbr);
+               fn::bind_back(fun_object);
+          }
+     }
+}
+
+
+SCENARIO("The bind_back function should take bound arguments by any value category.")
+{
+     GIVEN("A forwarding function an an lvalue, an xvalue, and an rvalue of an int")
+     {
+          auto fun = [] (auto&& arg) { return true; };
+          int zero = 0;
+
+
+          THEN("the bind_back function can be called with every value category of the int.")
+          {
+               fn::bind_back(fun, zero);
+               fn::bind_back(fun, std::move(zero));
+               fn::bind_back(fun, 0);
+          }
+     }
+}
+
+
+SCENARIO("Calling a bind_back_t object with arguments should invoke its bound function in a specific way.")
+{
+     GIVEN("A bind_back_t object with bound arguments")
+     {
+          int bound_arg  = 0;
+          int called_arg = 0;
+          auto fun = [] (int& arg1, int& arg2) { arg1 = 1; arg2 = 2; };
+
+          auto bound_fun = fn::bind_back(fun, std::ref(bound_arg));
+
+
+          WHEN("it is called with additional arguments")
+          {
+               bound_fun(called_arg);
+
+
+               THEN("it should call the bound function with the calling arguments followed by the bound arguments")
+               {
+                    REQUIRE( bound_arg  == 2 );
+                    REQUIRE( called_arg == 1 );
+               }
+          }
+     }
+}
+
+
+SCENARIO("A bind_back_t object should take calling arguments to its child function by any value category.")
+{
+     GIVEN("A bound forwarding function and an lvalue, an xvalue, and an rvalue of an int")
+     {
+          auto fun = [] (auto&& arg) { return true; };
+          auto bound_fun = fn::bind_back(fun);
+          int zero = 0;
+
+
+          THEN("the bound function can be called with each value category of int.")
+          {
+               bound_fun(zero);
+               bound_fun(std::move(zero));
+               bound_fun(0);
+          }
+     }
+}
+
+
+SCENARIO("A bind_back_t object should return the return value of its bound function when invoked.")
+{
+     auto fun = [] () { return true; };
+     auto bound_fun = fn::bind_back(fun);
+
+     REQUIRE( bound_fun() == true );
+}
+
+
+// TODO: cv qualifications and exceptions
 
 
 // =====================================================================================================================
@@ -113,6 +223,7 @@ SCENARIO("An algorithm or combinator should take its child function by any value
                REQUIRE( std::is_invocable_v<decltype(fo::negate), decltype(returns_true)>   );
           }
 
+
           THEN("the optional algorithm or combinator can be called with each one.")
           {
                REQUIRE( std::is_invocable_v<decltype(fn::optional), decltype(returns_true)&>  );
@@ -123,6 +234,7 @@ SCENARIO("An algorithm or combinator should take its child function by any value
                REQUIRE( std::is_invocable_v<decltype(fo::optional), decltype(returns_true)&&> );
                REQUIRE( std::is_invocable_v<decltype(fo::optional), decltype(returns_true)>   );
           }
+
 
           THEN("the at_most algorithm or combinator can be called with each one.")
           {
@@ -135,6 +247,7 @@ SCENARIO("An algorithm or combinator should take its child function by any value
                REQUIRE( std::is_invocable_v<decltype(fo::at_most), int, decltype(returns_true)>   );
           }
 
+
           THEN("the n_times algorithm or combinator can be called with each one.")
           {
                REQUIRE( std::is_invocable_v<decltype(fn::n_times), int, decltype(returns_true)&>  );
@@ -145,6 +258,7 @@ SCENARIO("An algorithm or combinator should take its child function by any value
                REQUIRE( std::is_invocable_v<decltype(fo::n_times), int, decltype(returns_true)&&> );
                REQUIRE( std::is_invocable_v<decltype(fo::n_times), int, decltype(returns_true)>   );
           }
+
 
           THEN("the repeat algorithm or combinator can be called with each one.")
           {
@@ -157,6 +271,7 @@ SCENARIO("An algorithm or combinator should take its child function by any value
                REQUIRE( std::is_invocable_v<decltype(fo::repeat), int, int, decltype(returns_true)>   );
           }
 
+
           THEN("the many algorithm or combinator can be called with each one.")
           {
                REQUIRE( std::is_invocable_v<decltype(fn::many), decltype(returns_true)&>  );
@@ -167,6 +282,7 @@ SCENARIO("An algorithm or combinator should take its child function by any value
                REQUIRE( std::is_invocable_v<decltype(fo::many), decltype(returns_true)&&> );
                REQUIRE( std::is_invocable_v<decltype(fo::many), decltype(returns_true)>   );
           }
+
 
           THEN("the at_least algorithm or combinator can be called with each one.")
           {
@@ -179,6 +295,7 @@ SCENARIO("An algorithm or combinator should take its child function by any value
                REQUIRE( std::is_invocable_v<decltype(fo::at_least), int, decltype(returns_true)>   );
           }
 
+
           THEN("the some algorithm or combinator can be called with each one.")
           {
                REQUIRE( std::is_invocable_v<decltype(fn::some), decltype(returns_true)&>  );
@@ -190,6 +307,7 @@ SCENARIO("An algorithm or combinator should take its child function by any value
                REQUIRE( std::is_invocable_v<decltype(fo::some), decltype(returns_true)>   );
           }
 
+
           THEN("the any algorithm or combinator can be called with each one.")
           {
                REQUIRE( std::is_invocable_v<decltype(fn::any), decltype(returns_true)&>  );
@@ -200,6 +318,7 @@ SCENARIO("An algorithm or combinator should take its child function by any value
                REQUIRE( std::is_invocable_v<decltype(fo::any), decltype(returns_true)&&> );
                REQUIRE( std::is_invocable_v<decltype(fo::any), decltype(returns_true)>   );
           }
+
 
           THEN("the all algorithm or combinator can be called with each one.")
           {
@@ -220,6 +339,7 @@ SCENARIO("An algorithm or combinator should take arguments to its child function
      GIVEN("A forwarding function and an lvalue, an xvalue, and an rvalue of an int")
      {
           auto fun = [] (auto&& arg) { return true; };
+
 
           THEN("the identity algorithm or combinator can be called with the function and each value category of int.")
           {
@@ -355,7 +475,7 @@ SCENARIO("An algorithm or combinator should take arguments to its child function
 }
 
 
-SCENARIO("An algorithm or combinator should be specializable on any callable type that returns a type contextually "
+SCENARIO("An algorithm or combinator should be invocable with any callable type that returns a type contextually "
          "convertible to bool.")
 {
      GIVEN("Every type of callable object")

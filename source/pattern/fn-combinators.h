@@ -10,7 +10,14 @@
 // Compare to https://github.com/rollbear/lift and, of cource, c++20 views
 
 // TODO: A well-designed Curry function object would allow us to combine namespaces fn and fo without loss of
-// usability.
+// usability. Idea, copy std::bind_front, inspect if a result can be obtained from a function call. If so, return the
+// result. If not, return a Curry object.
+// This C++ proposal might contain useful implementation considerations:
+//      https://brevzin.github.io/cpp_proposals/1170_overload_sets/p1170r0.html
+
+// TODO: These are for impure functions only, since the return values are required to be boolean. The distinction needs
+// to be clarified, justified, and then formalized. If the design turns out to be flawed, see if they can be replaced
+// by combinators that return std::optional<State>.
 
 
 #pragma once
@@ -213,12 +220,22 @@ auto some =
 };
 
 
+// Should consider providing an overload which works like this: any<3>(arg1, arg2, arg3, f1, f2)
+// This would be less boilerplate for the user.
+// Maybe could write a recursive template that, with specializations, peels the boolean_invocables off one by one.
+//      my_invoke(f1, arg2, arg3, ...) calls my_invoke(f1, arg3, ...) if arg2 is boolean_invocable, and so on
 struct any_t
 {
      bool operator() (boolean_invocable auto&&... f)
      {
           return (... || std::invoke(std::forward<decltype(f)>(f)));
      }
+
+     template <class... Args, boolean_invocable<Args...>... F>
+     bool operator () (std::tuple<Args...>& args, F&&... f)
+     {
+          return (... || std::apply(std::forward<F>(f), args));
+     };
 
      template <class... Args, boolean_invocable<Args...>... F>
      bool operator() (std::tuple<Args...>&& args, F&&... f)
@@ -234,6 +251,12 @@ struct all_t
      {
           return (... && std::invoke(std::forward<decltype(f)>(f)));
      }
+
+     template <class... Args, boolean_invocable<Args...>... F>
+     bool operator () (std::tuple<Args...>& args, F&&... f)
+     {
+          return (... && std::apply(std::forward<F>(f), args));
+     };
 
      template <class... Args, boolean_invocable<Args...>... F>
      bool operator () (std::tuple<Args...>&& args, F&&... f)
